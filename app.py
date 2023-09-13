@@ -93,8 +93,31 @@ def create_app():
         selected_reporting_period = ReportingPeriod.query.get(reporting_period_id)
         reports = selected_reporting_period.reports
 
-        return render_template('view_reports.html', reporting_periods=reporting_periods, reports=reports, selected_period=reporting_period_id)
-    
+        # Calculations
+        total_ghg_savings = sum([report.total_emissions for report in reports])
+        total_solar_savings = sum([report.co2_emissions_solar for report in reports])
+        total_cost_savings = sum([report.cost_savings for report in reports])
+        local_business_count = sum([1 for report in reports if report.type.title() == "Local Business"])
+        council_facility_count = sum([1 for report in reports if report.type.title() == "Council Facility"])
+
+        # For Council Facilities
+        cf_total_ghg_savings = sum([report.total_emissions for report in reports if report.type.title() == "Council Facility"])
+        cf_total_solar_savings = sum([report.co2_emissions_solar for report in reports if report.type.title() == "Council Facility"])
+        cf_total_cost_savings = sum([report.cost_savings for report in reports if report.type.title() == "Council Facility"])
+
+        # For Local Businesses
+        lb_total_ghg_savings = sum([report.total_emissions for report in reports if report.type.title() == "Local Business"])
+        lb_total_solar_savings = sum([report.co2_emissions_solar for report in reports if report.type.title() == "Local Business"])
+        lb_total_cost_savings = sum([report.cost_savings for report in reports if report.type.title() == "Local Business"])
+
+        return render_template('view_reports.html', reporting_periods=reporting_periods, reports=reports, 
+                                selected_period=reporting_period_id, total_ghg_savings=total_ghg_savings,
+                                total_solar_savings=total_solar_savings, total_cost_savings=total_cost_savings, 
+                                local_business_count=local_business_count, council_facility_count=council_facility_count,
+                                cf_total_ghg_savings=cf_total_ghg_savings, cf_total_solar_savings=cf_total_solar_savings, 
+                                cf_total_cost_savings=cf_total_cost_savings, lb_total_ghg_savings=lb_total_ghg_savings, 
+                                lb_total_solar_savings=lb_total_solar_savings, lb_total_cost_savings=lb_total_cost_savings)
+
     
     @app.route('/update_report', methods=['POST'])
     @login_required

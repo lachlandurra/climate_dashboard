@@ -58,8 +58,33 @@
                 <td>{{ '{:,.2f}'.format(report.total_emissions - report.co2_emissions_solar) }}</td>                
                 <td contenteditable="true" data-type="cost_savings" data-report-id="{{ report.id }}">${{ '{:,.2f}'.format(report.cost_savings) }}</td>
             </tr>
-            {% endfor %}     
+            {% endfor %}
 
+            <tr class="totals-row">
+                <td colspan="2">Council Facility Totals:</td>
+                <td>{{ council_facility_count }}</td>
+                <td>{{ '{:,.2f}'.format(cf_total_ghg_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(cf_total_solar_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(cf_total_ghg_savings - cf_total_solar_savings) }}</td>
+                <td>${{ '{:,.2f}'.format(cf_total_cost_savings) }}</td>
+            </tr>
+            <tr class="totals-row">
+                <td colspan="2">Local Business Totals:</td>
+                <td>{{ local_business_count }}</td>
+                <td>{{ '{:,.2f}'.format(lb_total_ghg_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(lb_total_solar_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(lb_total_ghg_savings - lb_total_solar_savings) }}</td>
+                <td>${{ '{:,.2f}'.format(lb_total_cost_savings) }}</td>
+            </tr>
+            <tr class="totals-row">
+                <td colspan="2">Overall Totals:</td>
+                <td>{{ local_business_count + council_facility_count}}</td>
+                <td>{{ '{:,.2f}'.format(total_ghg_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(total_solar_savings) }}</td>
+                <td>{{ '{:,.2f}'.format(total_ghg_savings - total_solar_savings) }}</td>
+                <td>${{ '{:,.2f}'.format(total_cost_savings) }}</td>
+            </tr>
+            
             <tr>
                 <td colspan="7" style="text-align: center;">
                     <a href="{{ url_for('add_business_report') }}" class="add-report">
@@ -71,4 +96,3 @@
     </table>
 </div>
 {% endblock %}
-
