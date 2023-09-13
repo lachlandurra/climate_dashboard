@@ -167,6 +167,7 @@ def create_app():
                 if existing_biz:
                     error_msg = "This business or facility already exists!"
                     show_error_modal = True
+                    return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
                 else:
                     business_or_facility = BusinessOrFacility(name=name, type=type_)
                     db.session.add(business_or_facility)
