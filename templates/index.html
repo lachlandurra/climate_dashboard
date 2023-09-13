@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="welcome-text">
+        Welcome to the CEERP Data Dashboard, {{ current_user.username }}!
+    </div>
+    <div class="backlogs">
+        <div class="backlog-container">
+            <h2>Reporting Periods</h2>
+            <a href="{{ url_for('create_reporting_period') }}" class="global-btn">Add Reporting Period</a>
+        </div>
+        
+        <div class="backlog-container">
+            <h2>Businesses & Facilities</h2>
+            <a href="{{ url_for('add_business_or_facility') }}" class="global-btn">Add Business or Facility</a>
+        </div>
+    </div>
+    <div class="backlogs">
+        <div class="backlog-container">
+            <h2>Emission Reports</h2>
+            <a href="{{ url_for('add_emission_report') }}" class="global-btn">Add Emission Report</a>
+        </div>    
+
+        <div class="backlog-container">
+            <h2>View and Edit Reports</h2>
+            <a href="{{ url_for('view_reports') }}" class="global-btn">View / Edit Reports</a>
+        </div>   
+    </div>
+</div>
+{% endblock %}

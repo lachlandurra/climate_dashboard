@@ -1,0 +1,466 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background: #F8F9FA;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+
+.login-container {
+    background: #fff;
+    width: 500px;
+    margin: 65px auto;
+    padding: 35px;
+    border-radius: 4px;
+    box-shadow: 0 2px 25px rgba(0, 0, 0, 0.2);
+}
+
+.login-container h2 {
+    font-weight: 300;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.login-container div {
+    margin-bottom: 15px;
+}
+
+.login-container label {
+    display: block;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* Ensuring consistent styling for inputs and dropdowns */
+.login-container input[type="text"],
+.login-container input[type="password"],
+.login-container input[type="number"],
+.login-container select {
+    font-size: 16px;
+    width: 100%; 
+    padding: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    border: 1px solid #747474;
+    border-radius: 4px;
+    outline: none;
+    transition: all .2s;
+    margin-bottom: 15px;  /* Vertical spacing */
+}
+
+.login-container input[type="text"]:focus,
+.login-container input[type="password"]:focus,
+.login-container input[type="number"]:focus,
+.login-container select:focus {
+    border-color: #222;
+}
+
+/* Styling for both .btn and .btn-submit */
+.login-container .btn,
+.login-container .btn-submit {
+    width: 100%;
+    border: none;
+    padding: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    background: #2d3b55;
+    color: #fff;
+    border-radius: 4px;
+    outline: none;
+    transition: all .3s;
+}
+
+.login-container .btn:hover,
+.login-container .btn-submit:hover {
+    background: #3c4d6d;
+}
+
+.register-link {
+    display: block;
+    margin-top: 15px;
+    text-decoration: none;
+    text-align: center;
+    color: #747474;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+}
+
+.header h1 {
+    font-size: 24px;
+    margin-left: 10px;
+}
+
+.header {
+    background: #2d4660;
+    align-items: center;
+    color: #ecf0f1;
+    padding: 10px 0;
+    margin: 0; 
+    justify-content: space-between;
+    border-bottom: 4px solid #323042;
+}
+
+.header nav a {
+    float: right;
+    padding: 8px 15px;
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.3s;
+    margin: 0 5px; 
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.header nav a:hover {
+    color: #000000;
+}
+
+.header nav a:focus {
+    outline: none;
+    border-bottom: 2px solid #808080;
+}
+
+.header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    display: inline-block;
+}
+
+a {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+nav.fill a {
+  transition: all 1s;
+}
+
+nav.fill a:after {
+  text-align: left;
+  content: '';
+  margin: 0;
+  opacity: 0;
+  color: #000;
+}
+
+nav.fill a:hover {
+  color: #000;
+}
+
+nav.fill a:hover:after {
+  animation: fill 1s forwards;
+  -webkit-animation: fill 0.3s forwards;
+  -moz-animation: fill 0.3s forwards;
+  opacity: 1;
+}
+
+.task-container table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid black !important;
+}
+
+.task-container th, .task-container td {
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    text-align: left !important;
+}
+
+.task-container tr:nth-child(even) {
+    background-color: #f2f2f2 !important;
+}
+
+.task-container button.btn {
+    margin-top: 10px;
+}
+
+/* Home Page Styles */
+
+.home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 50px;
+    width: 80%;  /* Reduce the width */
+    margin: 0 auto;  /* Centering it */
+}
+
+.full-width-container {
+    width: 100%; /* makes it stretch the full width of .home-container */
+    background: #fff;
+    border: 1px solid #ccc; 
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+}
+
+.backlogs {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.welcome-text {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d4660;
+    margin-bottom: 20px; /* Space between welcome text and backlogs */
+    text-align: center; /* Centers the welcome text */
+}
+
+.backlog-container {
+    flex: 0 0 48%;
+    background: #FFFFFF;
+    width: 95%; 
+    border: 1px solid #ccc; 
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    text-align: center;
+    width: calc(100% - 40px);
+}
+
+.backlog-container h2 {
+    text-align: center;
+    font-size: 28px;
+    color: #2d3b55;
+    margin-bottom: 20px; /* Space between title and the list */
+}
+
+.backlog-container ul {
+    list-style-type: none; /* Removes the default bullets from the list */
+    padding: 0;
+}
+
+.backlog-container li {
+    padding: 10px 0; /* Adds some space between the backlogs */
+    text-align: center; /* Centers the backlogs */
+}
+
+.backlog-container a {
+    color: #2d4660;
+    text-decoration: none;
+    font-size: 18px; /* Makes the backlog link slightly bigger */
+    transition: color 0.3s; 
+}
+
+.backlog-container a:hover {
+    color: #3c4d6d;
+}
+
+.user-info {
+    margin-top: 20px;
+    text-align: center;
+    color: #747474;
+}
+
+.backlog-container button.btn {
+    display: block; /* Makes the button take the full width of its parent container */
+    margin: 10px auto; /* This will center the button */
+}
+
+.backlog-container button.btn {
+    width: auto; /* Override the width for the button to fit content */
+    border: none;
+    padding: 12px 24px; /* Added some horizontal padding */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    background: #2d3b55;
+    color: #fff;
+    border-radius: 4px;
+    outline: none;
+    transition: all .3s;
+}
+
+.backlog-container button.btn:hover {
+    background: #3c4d6d;
+}
+
+.task-container th, .task-container td {
+    border: 1px solid #dcdcdc;  /* Gives a light gray border around the cells */
+    padding: 8px;  /* Adds some padding inside each cell */
+    text-align: left;  /* Aligns text to the left, change as needed */
+}
+
+.task-container th {
+    background-color: #f2f2f2;  /* Gives headers a light gray background */
+}
+
+
+[contenteditable="true"]:hover {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    cursor: text;
+}
+
+[contenteditable="true"]:focus {
+    background-color: #e6e6e6;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* If they are dropdowns, style them similar to the login-container dropdown */
+.task-container select {
+    font-size: 16px;
+    width: 100%; 
+    padding: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    border: 1px solid #747474;
+    border-radius: 4px;
+    outline: none;
+    transition: all .2s;
+    background: #fff;
+}
+
+.task-container {
+    width: 100%;
+    border-collapse: collapse;  
+}
+
+
+.task-container select:focus {
+    border-color: #222;
+}
+
+td:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.edit-icon {
+    display: none;
+    margin-left: 5px;
+}
+
+td:hover .display {
+    background-image: url('pencil-solid.svg');
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-right: 20px; /* adjust as needed */
+}
+
+.display-value {
+    display: none;
+}
+
+.edit {
+    display: block;
+}
+
+.global-btn {
+    display: inline-block; 
+    margin: 10px 0;
+    width: auto; 
+    border: none;
+    padding: 12px 24px; /* Adjust the vertical (12px) and horizontal (24px) padding as needed */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    background: #2d3b55;
+    color: #fff; /* Text color set to white */
+    border-radius: 4px;
+    outline: none;
+    transition: all .3s;
+    text-align: center; /* Text alignment set to center */
+}
+
+.global-btn:hover {
+    background: #3c4d6d;
+}
+
+.add-task-container {
+    text-align: center;     /* Centers the content horizontally */
+    margin-bottom: 20px;    /* Gives some space between the button and the table */
+}
+
+.global-btn:hover, a.global-btn:hover {
+    background: #3c4d6d;
+    color: #fff; /* Ensuring text stays white on hover */
+}
+
+.list-btn, a.list-btn{
+    background-color: #e9ecef;
+    color: #212529;
+    border: 1px solid #ced4da;
+    padding: 8px 12px; /* Reduced padding for smaller button size */
+    font-size: 14px; /* Reduced font-size for smaller text */
+    border-radius: 5px;
+    text-decoration: none;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    display: inline-block;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.list-btn:hover, a.list-btn:hover {
+    background: #5d8d70;  /* Darker shade on hover */
+    color: #fff; /* Ensuring text stays white on hover */
+}
+
+.global-btn, a.global-btn {
+    color: #fff;
+}
+
+.global-btn:hover, a.global-btn:hover {
+    color: #fff;  /* Ensuring text stays white on hover */
+}
+
+.task {
+    margin-bottom: 16px;  /* Adjust the size as you see fit */
+}
+
+.report_select {
+    font-size: 16px;
+    width: 22%; 
+    padding: 12px 24px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    border: 1px solid #747474;
+    border-radius: 4px;
+    outline: none;
+    transition: all .2s;
+    background: #fff;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}

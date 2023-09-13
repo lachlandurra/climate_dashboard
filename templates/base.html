@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CEERP Data Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="header">
+        <nav class="fill">
+            <h1>CEERP Data Dashboard</h1>
+            <a href="{{ url_for('register') }}">Register</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('add_business_or_facility') }}">Add Business or Facility</a>
+            <a href="{{ url_for('add_emission_report') }}">Add Emission Report</a>
+        </nav>
+    </div>
+    <hr>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+
+</body>
+</html>

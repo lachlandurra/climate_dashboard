@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="backlog-container">
+    <h2>
+        Reports for 
+        {% if reports %}
+        Reporting Period: {{ reports[0].reporting_period.start_month }} {{ reports[0].reporting_period.start_year }} - {{ reports[0].reporting_period.end_month }} {{ reports[0].reporting_period.end_year }}
+        {% else %}
+        Select a Reporting Period
+        {% endif %}
+    </h2>
+
+    <!-- Dropdown form to select a reporting period -->
+    <form method="POST" action="{{ url_for('view_reports') }}">
+        <select name="reporting_period" class="report_select">
+            {% for period in reporting_periods %}
+                <option value="{{ period.id }}" 
+                        {% if period.id == selected_period|int %}selected{% endif %}>
+                        {{ period.start_month }} {{ period.start_year }} - {{ period.end_month }} {{ period.end_year }}
+                </option>
+            {% endfor %}
+        </select>
+        <input class="global-btn" type="submit" value="View Reports">
+    </form>
+
+    <!-- Table to display reports for the selected period -->
+    <table class="task-container">
+        <thead>
+            <tr>
+                <th>Type (Council Facility / Local Business)</th>
+                <th>Name of Business/Facility</th>
+                <th>Total Emissions</th>
+                <th>Emissions by Solar PV</th>
+                <th>Other Emissions</th>
+                <th>Cost Savings</th>
+            </tr>
+        </thead>        
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ report.type }}</td>
+                <td>{{ report.business_or_facility.name }}</td>
+                <td contenteditable="true" data-type="total_emissions" data-report-id="{{ report.id }}">{{ report.total_emissions }}</td>
+                <td contenteditable="true" data-type="co2_emissions_solar" data-report-id="{{ report.id }}">{{ report.co2_emissions_solar }}</td>
+                <td>{{ report.total_emissions - report.co2_emissions_solar }}</td>                
+                <td contenteditable="true" data-type="cost_savings" data-report-id="{{ report.id }}">{{ report.cost_savings }}</td>
+            </tr>
+            {% endfor %}                   
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
