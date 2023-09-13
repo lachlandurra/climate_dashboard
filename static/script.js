@@ -5,6 +5,15 @@ $(document).ready(function() {
         updateValue($(this), newValue);
     });    
 
+    // Toggle visibility of 'Name' and 'Type' fields
+    $('#business_or_facility').on('change', function() {
+        if ($(this).val() === 'new') {
+            $('#newBusinessFields').show();
+        } else {
+            $('#newBusinessFields').hide();
+        }
+    }).trigger('change');  // Trigger the change event to set the initial state
+
     function updateValue(element, newValue) {
         var cell = element.closest('td');
         var reportId = cell.attr('data-report-id');

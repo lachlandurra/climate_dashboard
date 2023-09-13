@@ -121,43 +121,36 @@ def create_app():
 
         return jsonify(status="success")
 
-
-
-
-    @app.route('/add_business_or_facility', methods=['GET', 'POST'])
+    @app.route('/add_business_report', methods=['GET', 'POST'])
     @login_required
-    def add_business_or_facility():
-        show_error_modal = False
-        if request.method == 'POST':
-            name = request.form['name']
-            type_ = request.form['type']
-
-            existing_biz = BusinessOrFacility.query.filter_by(name=name).first()
-            if existing_biz:
-                show_error_modal = True
-            else:
-                business_or_facility = BusinessOrFacility(name=name, type=type_)
-                db.session.add(business_or_facility)
-                db.session.commit()
-                return redirect(url_for('index'))
-
-        return render_template('add_business_or_facility.html', show_error_modal=show_error_modal)
-
-
-    @app.route('/add_emission_report', methods=['GET', 'POST'])
-    @login_required
-    def add_emission_report():
+    def add_business_report():
         businesses_or_facilities = BusinessOrFacility.query.all()  # Get all businesses
         reporting_periods = ReportingPeriod.query.all()
         show_error_modal = False
+        error_msg = ""
         
         if request.method == 'POST':
-            business_or_facility_id = request.form['business_or_facility']  
+            business_or_facility_id = request.form['business_or_facility']
+            
+            if business_or_facility_id == "new":  # if the user wants to add a new business
+                name = request.form['name']
+                type_ = request.form['type']
+
+                existing_biz = BusinessOrFacility.query.filter_by(name=name).first()
+                if existing_biz:
+                    error_msg = "This business or facility already exists!"
+                    show_error_modal = True
+                else:
+                    business_or_facility = BusinessOrFacility(name=name, type=type_)
+                    db.session.add(business_or_facility)
+                    db.session.commit()
+                    business_or_facility_id = business_or_facility.id  # Update the id for new business
+            
             reporting_period_id = request.form['reporting_period']
 
-            # Check if a report already exists for this business and reporting period
             existing_report = EmissionReport.query.filter_by(business_or_facility_id=business_or_facility_id, reporting_period_id=reporting_period_id).first()
             if existing_report:
+                error_msg = "An emission report for this business in the selected reporting period already exists!"
                 show_error_modal = True
             else:
                 co2_emissions_solar = request.form['co2_emissions_solar']
@@ -171,7 +164,7 @@ def create_app():
                 db.session.commit()
                 return redirect(url_for('index'))
 
-        return render_template('add_emission_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal)
+        return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 
     @app.route('/logout')
     @login_required
