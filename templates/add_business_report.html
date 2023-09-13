@@ -7,7 +7,7 @@
 
         <label for="business_or_facility">Select Business/Facility:</label>
         <select id="business_or_facility" name="business_or_facility">
-            <option value="new">Add New Business/Facility</option>
+            <option value="new">Add New Business / Council Facility</option>
             {% for business in businesses_or_facilities %}
                 <option value="{{ business.id }}">{{ business.name }}</option>
             {% endfor %}
@@ -15,7 +15,7 @@
 
         <div id="newBusinessFields">
             <label for="name">Name:</label>
-            <input type="text" id="name" name="name">
+            <input type="text" id="name" name="name" required>
 
             <label for="type">Type:</label>
             <select id="type" name="type">

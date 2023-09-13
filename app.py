@@ -112,14 +112,41 @@ def create_app():
             report.co2_emissions_solar = float(value)
         elif column_name == "cost_savings":
             report.cost_savings = float(value)
-        elif column_name == "total_emissions":  # Handling the total_emissions column
+        elif column_name == "total_emissions":
             report.total_emissions = float(value)
+        elif column_name == "type":
+            report.business_or_facility.type = value
         else:
             return jsonify(status="error", message="Invalid column name")
 
         db.session.commit()
 
         return jsonify(status="success")
+
+    
+    @app.route('/delete_report/<int:report_id>', methods=['POST'])
+    @login_required
+    def delete_report(report_id):
+        report = EmissionReport.query.get(report_id)
+        
+        if report:
+            business_id = report.business_or_facility_id
+            db.session.delete(report)
+            db.session.commit()
+            
+            # Check if the business has other reports
+            other_reports = EmissionReport.query.filter_by(business_or_facility_id=business_id).all()
+            if not other_reports:  # If no other reports for this business
+                business = BusinessOrFacility.query.get(business_id)
+                if business:
+                    db.session.delete(business)
+                    db.session.commit()
+
+            return jsonify(status="success")
+        else:
+            return jsonify(status="error", message="Report not found")
+
+
 
     @app.route('/add_business_report', methods=['GET', 'POST'])
     @login_required
@@ -162,7 +189,7 @@ def create_app():
                                         business_or_facility_id=business_or_facility_id)
                 db.session.add(report)
                 db.session.commit()
-                return redirect(url_for('index'))
+                return redirect(url_for('view_reports'))
 
         return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 

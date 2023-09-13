@@ -28,9 +28,10 @@
     <table class="task-container">
         <thead>
             <tr>
+                <th></th>
                 <th>Type 
                     <br>(Council Facility / Local Business)</th>
-                <th>Name of Business/Facility</th>
+                <th>Name of Business / Facility</th>
                 <th>Total GHG Savings
                     <br>(tonnes / yr)</th>
                 <th>Solar PV GHG Savings 
@@ -44,14 +45,28 @@
         <tbody>
             {% for report in reports %}
             <tr>
-                <td>{{ report.type }}</td>
+                <td><span class="delete-report" data-report-id="{{ report.id }}"><i class="fas fa-trash"></i></span></td>
+                <td>
+                    <select class="report-type-dropdown" data-report-id="{{ report.id }}">
+                        <option value="Council Facility" {% if report.type.title() == "Council Facility" %}selected{% endif %}>Council Facility</option>
+                        <option value="Local Business" {% if report.type.title() == "Local Business" %}selected{% endif %}>Local Business</option>
+                    </select>
+                </td>                
                 <td>{{ report.business_or_facility.name }}</td>
-                <td contenteditable="true" data-type="total_emissions" data-report-id="{{ report.id }}">{{ report.total_emissions }}</td>
-                <td contenteditable="true" data-type="co2_emissions_solar" data-report-id="{{ report.id }}">{{ report.co2_emissions_solar }}</td>
-                <td>{{ report.total_emissions - report.co2_emissions_solar }}</td>                
-                <td contenteditable="true" data-type="cost_savings" data-report-id="{{ report.id }}">{{ report.cost_savings }}</td>
+                <td contenteditable="true" data-type="total_emissions" data-report-id="{{ report.id }}">{{ '{:,.2f}'.format(report.total_emissions) }}</td>
+                <td contenteditable="true" data-type="co2_emissions_solar" data-report-id="{{ report.id }}">{{ '{:,.2f}'.format(report.co2_emissions_solar) }}</td>
+                <td>{{ '{:,.2f}'.format(report.total_emissions - report.co2_emissions_solar) }}</td>                
+                <td contenteditable="true" data-type="cost_savings" data-report-id="{{ report.id }}">${{ '{:,.2f}'.format(report.cost_savings) }}</td>
             </tr>
-            {% endfor %}                   
+            {% endfor %}     
+
+            <tr>
+                <td colspan="7" style="text-align: center;">
+                    <a href="{{ url_for('add_business_report') }}" class="add-report">
+                        <i class="fas fa-plus"></i>
+                    </a>
+                </td>
+            </tr> 
         </tbody>
     </table>
 </div>

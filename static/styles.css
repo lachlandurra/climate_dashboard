@@ -464,3 +464,17 @@ td:hover .display {
     font-weight: bold;
     cursor: pointer;
 }
+
+.delete-report i {
+    color: red;            /* Color of the trash icon */
+    cursor: pointer;       /* Make it look clickable */
+    font-size: 20px;       /* Size of the icon */
+}
+
+.add-report {
+    cursor: pointer;
+    color: #007bff; /* or any other color you prefer */
+}
+.add-report:hover {
+    color: #0056b3; /* A darker shade for hover effect */
+}

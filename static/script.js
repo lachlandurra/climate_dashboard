@@ -58,4 +58,38 @@ $(document).ready(function() {
             }
         }
     }
+
+    $(".delete-report").click(function() {
+        var reportId = $(this).data('report-id');
+        
+        if(confirm("Are you sure you want to delete this report?")) {
+            $.ajax({
+                type: "POST",
+                url: "/delete_report/" + reportId,
+                success: function(response) {
+                    if(response.status === 'success') {
+                        location.reload();  // Refresh the page to reflect changes
+                    } else {
+                        alert("Error deleting report: " + response.message);
+                    }
+                }
+            });
+        }
+    });
+    
+    $('.report-type-dropdown').change(function() {
+        var reportId = $(this).data('report-id');
+        var newValue = $(this).val();
+
+        $.post("/update_report", {
+            report_id: reportId,
+            column_name: "type",
+            value: newValue
+        }).done(function(data) {
+            if (data.status !== "success") {
+                alert("Failed to update report type. " + data.message);
+            }
+        });
+    });
+    
 });
