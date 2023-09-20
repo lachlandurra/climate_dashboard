@@ -1,8 +1,8 @@
 // Emissions By Reporting Period Graph Logic
 // Emissions By Reporting Period Graph Logic
 function createEmissionsByReportingPeriodGraph(data) {
-    const svgWidth = 600, svgHeight = 450;  // Increased the svgHeight to make space for the graph title
-    const margin = {top: 40, right: 20, bottom: 100, left: 70};
+    const svgWidth = 600, svgHeight = 500;  // Increased the svgHeight to make space for the graph title
+    const margin = {top: 130, right: 20, bottom: 130, left: 70};
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -38,7 +38,7 @@ function createEmissionsByReportingPeriodGraph(data) {
     // Graph title
     svg.append("text")
        .attr("x", svgWidth / 2)
-       .attr("y", 10)
+       .attr("y", 30)
        .attr("text-anchor", "middle")
        .attr("font-size", "20px")
        .attr("font-weight", "bold")
@@ -85,7 +85,7 @@ function createEmissionsByReportingPeriodGraph(data) {
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", margin.left - 60) // Increased distance from the left edge
-        .attr("x", -(height / 2)-20)
+        .attr("x", -(height / 2)-margin.top)
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .style("fill", "black") // Set the font color to black
@@ -100,7 +100,7 @@ function createEmissionsByReportingPeriodGraph(data) {
                     .selectAll("g")
                     .data(subgroups)
                     .enter().append("g")
-                        .attr("transform", (d, i) => `translate(0,${i * 20 + 10})`); // Added 5 to the y-axis position to lower the legend slightly
+                        .attr("transform", (d, i) => `translate(0,${i * 20 + 60})`); // Added 5 to the y-axis position to lower the legend slightly
 
     legend.append("rect")
         .attr("x", width - 19)
@@ -146,8 +146,8 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
     ];
     data = aggregatedData;
     
-    const svgWidth = 600, svgHeight = 450;
-    const margin = {top: 40, right: 20, bottom: 100, left: 70};
+    const svgWidth = 600, svgHeight = 500;  // Increased the svgHeight to make space for the graph title
+    const margin = {top: 130, right: 20, bottom: 130, left: 70};
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
@@ -183,7 +183,7 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
     // Graph title
     svg.append("text")
        .attr("x", svgWidth / 2)
-       .attr("y", 10)
+       .attr("y", 30)
        .attr("text-anchor", "middle")
        .attr("font-size", "20px")
        .attr("font-weight", "bold")
@@ -229,7 +229,7 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", margin.left - 60)
-        .attr("x", -(height / 2)-20)
+        .attr("x", -(height / 2)-margin.top)
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .style("fill", "black")
@@ -244,7 +244,7 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
                     .selectAll("g")
                     .data(subgroups)
                     .enter().append("g")
-                        .attr("transform", (d, i) => `translate(0,${i * 20 + 10})`);
+                        .attr("transform", (d, i) => `translate(0,${i * 20 + 60})`);
 
     legend.append("rect")
         .attr("x", width - 19)
