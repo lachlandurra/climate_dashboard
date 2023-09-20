@@ -213,22 +213,31 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
     createGraph(aggregatedData, "#emissionsByCouncilAndBusiness", "Emissions by Council and Local Businesses", "Council and Local Businesses");
 }
 
-function createTop5TotalEmissionsGraph(data) {
-    const sortedData = data.sort((a, b) => b.total_emissions - a.total_emissions).slice(0, 5);
+function createTop5CouncilTotalEmissionsGraph(data) {
+    createGraph(data, "#top5CouncilTotalEmissions", "Top 5 Council Facilities by Total Emissions", "Facility");
+}
 
-    createGraph(sortedData, "#top5TotalEmissions", "Top 5 Facilities by Total Emissions", "Facility");
+function createTop5LocalBusinessTotalEmissionsGraph(data) {
+    createGraph(data, "#top5LocalBusinessTotalEmissions", "Top 5 Local Businesses by Total Emissions", "Facility");
+}
+
+function createTop5CouncilSolarPVEmissionsGraph(data) {
+    createGraph(data, "#top5CouncilSolarPVEmissions", "Top 5 Council Facilities by Solar PV Emissions", "Facility");
+}
+
+function createTop5LocalBusinessSolarPVEmissionsGraph(data) {
+    createGraph(data, "#top5LocalBusinessSolarPVEmissions", "Top 5 Local Businesses by Solar PV Emissions", "Facility");
+}
+
+function createTop5CouncilOtherEmissionsGraph(data) {
+    createGraph(data, "#top5CouncilOtherEmissions", "Top 5 Council Facilities by Other Emissions", "Facility");
+}
+
+function createTop5LocalBusinessOtherEmissionsGraph(data) {
+    createGraph(data, "#top5LocalBusinessOtherEmissions", "Top 5 Local Businesses by Other Emissions", "Facility");
 }
 
 
-function createTop5SolarPVEmissionsGraph(data) {
-    const sortedData = data.sort((a, b) => b.co2_solar - a.co2_solar).slice(0, 5);
-    createGraph(sortedData, "#top5SolarPVEmissions", "Top 5 Facilities by Solar PV Emissions", "Facility");
-}
-
-function createTop5OtherEmissionsGraph(data) {
-    const sortedData = data.sort((a, b) => b.other_emissions - a.other_emissions).slice(0, 5);
-    createGraph(sortedData, "#top5OtherEmissions", "Top 5 Facilities by Other Emissions", "Facility");
-}
 
 function createTop5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => b.cost_savings - a.cost_savings).slice(0, 5);
@@ -274,17 +283,29 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => createEmissionsByCouncilAndBusinessGraph(data));
 
-    fetch('/api/top5_total_emissions')
+        fetch('/api/top5_council_facilities_by_total_emissions')
         .then(response => response.json())
-        .then(data => createTop5TotalEmissionsGraph(data));
+        .then(data => createTop5CouncilTotalEmissionsGraph(data));
 
-    fetch('/api/top5_solar_pv_emissions')
+    fetch('/api/top5_local_businesses_by_total_emissions')
         .then(response => response.json())
-        .then(data => createTop5SolarPVEmissionsGraph(data));
+        .then(data => createTop5LocalBusinessTotalEmissionsGraph(data));
 
-    fetch('/api/top5_facilities_by_other_emissions')
+    fetch('/api/top5_council_facilities_by_solar_pv')
         .then(response => response.json())
-        .then(data => createTop5OtherEmissionsGraph(data));
+        .then(data => createTop5CouncilSolarPVEmissionsGraph(data));
+
+    fetch('/api/top5_local_businesses_by_solar_pv')
+        .then(response => response.json())
+        .then(data => createTop5LocalBusinessSolarPVEmissionsGraph(data));
+
+    fetch('/api/top5_council_facilities_by_other_emissions')
+        .then(response => response.json())
+        .then(data => createTop5CouncilOtherEmissionsGraph(data));
+
+    fetch('/api/top5_local_businesses_by_other_emissions')
+        .then(response => response.json())
+        .then(data => createTop5LocalBusinessOtherEmissionsGraph(data));
 
     fetch('/api/top5_facilities_by_cost_savings')
         .then(response => response.json())

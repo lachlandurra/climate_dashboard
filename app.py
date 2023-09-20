@@ -256,10 +256,10 @@ def create_app():
 
         return jsonify(data)
 
-    @app.route('/api/top5_total_emissions')
+    @app.route('/api/top5_council_facilities_by_total_emissions')
     @login_required
-    def top5_facilities_by_total_emissions():
-        facilities = BusinessOrFacility.query.all()
+    def top5_council_facilities_by_total_emissions():
+        facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
         for facility in facilities:
             reports = facility.reports
@@ -273,11 +273,27 @@ def create_app():
         data.sort(key=lambda x: x['total_emissions'], reverse=True)
         return jsonify(data[:5])
 
-
-    @app.route('/api/top5_solar_pv_emissions')
+    @app.route('/api/top5_local_businesses_by_total_emissions')
     @login_required
-    def top5_facilities_by_solar_pv():
-        facilities = BusinessOrFacility.query.all()
+    def top5_local_businesses_by_total_emissions():
+        facilities = BusinessOrFacility.query.filter_by(type='local business').all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            total_emissions = sum([r.total_emissions for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': sum([r.co2_emissions_solar for r in reports]),
+                'other_emissions': sum([r.other_emissions for r in reports]),
+                'total_emissions': total_emissions
+            })
+        data.sort(key=lambda x: x['total_emissions'], reverse=True)
+        return jsonify(data[:5])
+
+    @app.route('/api/top5_council_facilities_by_solar_pv')
+    @login_required
+    def top5_council_facilities_by_solar_pv():
+        facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
         for facility in facilities:
             reports = facility.reports
@@ -290,10 +306,26 @@ def create_app():
         data.sort(key=lambda x: x['co2_solar'], reverse=True)
         return jsonify(data[:5])
 
-    @app.route('/api/top5_facilities_by_other_emissions')
+    @app.route('/api/top5_local_businesses_by_solar_pv')
     @login_required
-    def top5_facilities_by_other_emissions():
-        facilities = BusinessOrFacility.query.all()
+    def top5_local_businesses_by_solar_pv():
+        facilities = BusinessOrFacility.query.filter_by(type='local business').all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            total_solar = sum([r.co2_emissions_solar for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': total_solar,
+                'other_emissions': sum([r.other_emissions for r in reports])
+            })
+        data.sort(key=lambda x: x['co2_solar'], reverse=True)
+        return jsonify(data[:5])
+
+    @app.route('/api/top5_council_facilities_by_other_emissions')
+    @login_required
+    def top5_council_facilities_by_other_emissions():
+        facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
         for facility in facilities:
             reports = facility.reports
@@ -305,6 +337,23 @@ def create_app():
             })
         data.sort(key=lambda x: x['other_emissions'], reverse=True)
         return jsonify(data[:5])
+
+    @app.route('/api/top5_local_businesses_by_other_emissions')
+    @login_required
+    def top5_local_businesses_by_other_emissions():
+        facilities = BusinessOrFacility.query.filter_by(type='local business').all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            other_emissions = sum([r.other_emissions for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': sum([r.co2_emissions_solar for r in reports]),
+                'other_emissions': other_emissions
+            })
+        data.sort(key=lambda x: x['other_emissions'], reverse=True)
+        return jsonify(data[:5])
+
 
     @app.route('/api/top5_facilities_by_cost_savings')
     @login_required
