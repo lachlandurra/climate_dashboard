@@ -93,3 +93,43 @@ $(document).ready(function() {
     });
     
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.getElementById('reportingPeriodDropdown');
+    const removeButton = document.getElementById('removeReportingPeriodButton');
+
+    // Fetch reporting periods and populate dropdown
+    fetch('/api/all_reporting_periods')
+        .then(response => response.json())
+        .then(periods => {
+            periods.forEach(period => {
+                const option = document.createElement('option');
+                option.value = period.id;
+                option.textContent = `${period.start_month} ${period.start_year} - ${period.end_month} ${period.end_year}`;
+                dropdown.appendChild(option);
+            });
+        });
+
+    // Toggle dropdown visibility on button click
+    removeButton.addEventListener('click', () => {
+        if (dropdown.style.display === 'none') {
+            dropdown.style.display = 'block';
+        } else {
+            const period_id = dropdown.value;
+            const formData = new FormData();
+            formData.append('period_id', period_id);
+
+            // Send request to remove the selected reporting period
+            fetch('/remove_reporting_period', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    location.reload(); // Refresh the page after successful removal
+                } else {
+                    alert('Failed to remove reporting period.');
+                }
+            });
+        }
+    });
+});

@@ -77,6 +77,31 @@ def create_app():
             return redirect(url_for('index'))
         return render_template('create_reporting_period.html')
 
+    @app.route('/api/all_reporting_periods', methods=['GET'])
+    @login_required
+    def all_reporting_periods():
+        periods = ReportingPeriod.query.all()
+        return jsonify([{
+            'id': period.id,
+            'start_month': period.start_month,
+            'start_year': period.start_year,
+            'end_month': period.end_month,
+            'end_year': period.end_year
+        } for period in periods])
+
+    @app.route('/remove_reporting_period', methods=['POST'])
+    @login_required
+    def remove_reporting_period():
+        period_id = request.form.get('period_id')
+        period = ReportingPeriod.query.get(period_id)
+        
+        if period:
+            db.session.delete(period)
+            db.session.commit()
+            return redirect(url_for('index'))
+        else:
+            return "Error: Reporting Period Not Found", 400
+
     @app.route('/view_reports', methods=['GET', 'POST'])
     @login_required
     def view_reports():
@@ -118,7 +143,6 @@ def create_app():
                                 cf_total_cost_savings=cf_total_cost_savings, lb_total_ghg_savings=lb_total_ghg_savings, 
                                 lb_total_solar_savings=lb_total_solar_savings, lb_total_cost_savings=lb_total_cost_savings)
 
-    
     @app.route('/update_report', methods=['POST'])
     @login_required
     def update_report():
@@ -146,7 +170,6 @@ def create_app():
 
         return jsonify(status="success")
 
-    
     @app.route('/delete_report/<int:report_id>', methods=['POST'])
     @login_required
     def delete_report(report_id):
@@ -168,8 +191,6 @@ def create_app():
             return jsonify(status="success")
         else:
             return jsonify(status="error", message="Report not found")
-
-
 
     @app.route('/add_business_report', methods=['GET', 'POST'])
     @login_required
@@ -354,7 +375,6 @@ def create_app():
         data.sort(key=lambda x: x['other_emissions'], reverse=True)
         return jsonify(data[:5])
 
-
     @app.route('/api/top5_facilities_by_cost_savings')
     @login_required
     def top5_facilities_by_cost_savings():
@@ -385,7 +405,6 @@ def create_app():
         data.sort(key=lambda x: x['cost_savings'])
         return jsonify(data[:5])
 
-
     @app.route('/api/pie_chart_cost_savings')
     @login_required
     def pie_chart_cost_savings():
@@ -399,7 +418,6 @@ def create_app():
                 'cost_savings': cost_savings
             })
         return jsonify(data)
-
 
     @app.route('/logout')
     @login_required
