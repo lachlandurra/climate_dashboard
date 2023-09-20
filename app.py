@@ -401,7 +401,6 @@ def create_app():
         return jsonify(data)
 
 
-
     @app.route('/logout')
     @login_required
     def logout():

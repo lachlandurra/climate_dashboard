@@ -55,8 +55,6 @@ function createLegend(svg, width, subgroups) {
         });
 }
 
-
-
 function setupBars(svg, x, y, xSubgroup, data) {
     svg.append("g")
         .selectAll("g")
@@ -237,8 +235,6 @@ function createTop5LocalBusinessOtherEmissionsGraph(data) {
     createGraph(data, "#top5LocalBusinessOtherEmissions", "Top 5 Local Businesses by Other Emissions", "Facility");
 }
 
-
-
 function createTop5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => b.cost_savings - a.cost_savings).slice(0, 5);
     createCostSavingsGraph(sortedData, "#top5CostSavings", "Top 5 Facilities by Cost Savings");
@@ -248,31 +244,6 @@ function createBottom5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => a.cost_savings - b.cost_savings).slice(0, 5);
     createCostSavingsGraph(sortedData, "#bottom5CostSavings", "Bottom 5 Facilities by Cost Savings");
 }
-
-function createPieChartOfCostSavings(data) {
-    // Assuming you want a pie chart that shows the cost savings of each facility
-    const svg = createSVG("#pieChartCostSavings");
-    createTitle(svg, "Pie Chart of Cost Savings by Facility");
-
-    const pie = d3.pie().value(d => d.cost_savings);
-    const arc = d3.arc().innerRadius(0).outerRadius(Math.min(svgParams.width, svgParams.height) / 2 - 40);
-
-    const arcs = svg.selectAll(".arc")
-        .data(pie(data))
-        .enter().append("g")
-        .attr("class", "arc");
-
-    arcs.append("path")
-        .attr("d", arc)
-        .attr("fill", (d, i) => d3.interpolateRainbow(i / data.length));
-
-    arcs.append("text")
-        .attr("transform", d => `translate(${arc.centroid(d)})`)
-        .attr("dy", ".35em")
-        .style("text-anchor", "middle")
-        .text(d => d.data.name); // Display facility name
-}
-
 
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/emissions_by_reporting_period')
@@ -314,8 +285,4 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/bottom5_facilities_by_cost_savings')
         .then(response => response.json())
         .then(data => createBottom5CostSavingsGraph(data));
-
-    fetch('/api/pie_chart_cost_savings')
-        .then(response => response.json())
-        .then(data => createPieChartOfCostSavings(data));
 });
