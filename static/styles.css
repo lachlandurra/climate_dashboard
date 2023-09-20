@@ -478,3 +478,14 @@ td:hover .display {
 .add-report:hover {
     color: #0056b3; /* A darker shade for hover effect */
 }
+
+.graphs-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+}
+
+.graph {
+    flex: 1;
+    margin: 0 10px;  /* Optional: Adds a little space between the graphs */
+}
