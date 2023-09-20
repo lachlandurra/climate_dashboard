@@ -256,6 +256,101 @@ def create_app():
 
         return jsonify(data)
 
+    @app.route('/api/top5_total_emissions')
+    @login_required
+    def top5_facilities_by_total_emissions():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            total_emissions = sum([r.total_emissions for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': sum([r.co2_emissions_solar for r in reports]),
+                'other_emissions': sum([r.other_emissions for r in reports]),
+                'total_emissions': total_emissions
+            })
+        data.sort(key=lambda x: x['total_emissions'], reverse=True)
+        return jsonify(data[:5])
+
+
+    @app.route('/api/top5_solar_pv_emissions')
+    @login_required
+    def top5_facilities_by_solar_pv():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            total_solar = sum([r.co2_emissions_solar for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': total_solar,
+                'other_emissions': sum([r.other_emissions for r in reports])
+            })
+        data.sort(key=lambda x: x['co2_solar'], reverse=True)
+        return jsonify(data[:5])
+
+    @app.route('/api/top5_facilities_by_other_emissions')
+    @login_required
+    def top5_facilities_by_other_emissions():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            other_emissions = sum([r.other_emissions for r in reports])
+            data.append({
+                'name': facility.name,
+                'co2_solar': sum([r.co2_emissions_solar for r in reports]),
+                'other_emissions': other_emissions
+            })
+        data.sort(key=lambda x: x['other_emissions'], reverse=True)
+        return jsonify(data[:5])
+
+    @app.route('/api/top5_facilities_by_cost_savings')
+    @login_required
+    def top5_facilities_by_cost_savings():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            cost_savings = sum([r.cost_savings for r in reports])
+            data.append({
+                'name': facility.name,
+                'cost_savings': cost_savings
+            })
+        data.sort(key=lambda x: x['cost_savings'], reverse=True)
+        return jsonify(data[:5])
+
+    @app.route('/api/bottom5_facilities_by_cost_savings')
+    @login_required
+    def bottom5_facilities_by_cost_savings():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            cost_savings = sum([r.cost_savings for r in reports])
+            data.append({
+                'name': facility.name,
+                'cost_savings': cost_savings
+            })
+        data.sort(key=lambda x: x['cost_savings'])
+        return jsonify(data[:5])
+
+
+    @app.route('/api/pie_chart_cost_savings')
+    @login_required
+    def pie_chart_cost_savings():
+        facilities = BusinessOrFacility.query.all()
+        data = []
+        for facility in facilities:
+            reports = facility.reports
+            cost_savings = sum([r.cost_savings for r in reports])
+            data.append({
+                'name': facility.name,
+                'cost_savings': cost_savings
+            })
+        return jsonify(data)
+
 
 
     @app.route('/logout')
