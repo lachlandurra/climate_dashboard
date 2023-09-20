@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+    <h2>Remove Reporting Period</h2>
+    <form method="post">
+        
+        <label for="reporting_period">Select Reporting Period:</label>
+        <select id="reporting_period" name="reporting_period_id">
+            <!-- Options will be populated from the backend -->
+            {% for period in periods %}
+                <option value="{{ period.id }}">{{ period.start_month }} {{ period.start_year }} - {{ period.end_month }} {{ period.end_year }}</option>
+            {% endfor %}
+        </select>
+        
+        <button class="btn" type="submit">Remove Reporting Period</button>
+    </form>
+</div>
+{% endblock %}

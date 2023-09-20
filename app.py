@@ -89,18 +89,25 @@ def create_app():
             'end_year': period.end_year
         } for period in periods])
 
-    @app.route('/remove_reporting_period', methods=['POST'])
+    @app.route('/remove_reporting_period', methods=['GET', 'POST'])
     @login_required
     def remove_reporting_period():
-        period_id = request.form.get('period_id')
-        period = ReportingPeriod.query.get(period_id)
-        
-        if period:
-            db.session.delete(period)
-            db.session.commit()
-            return redirect(url_for('index'))
-        else:
-            return "Error: Reporting Period Not Found", 400
+        if request.method == 'POST':
+            period_id = request.form.get('reporting_period_id')
+            period = ReportingPeriod.query.get(period_id)
+            
+            if period:
+                db.session.delete(period)
+                db.session.commit()
+                return redirect(url_for('index'))
+            else:
+                return "Error: Reporting Period Not Found", 400
+
+        # If GET request, display the page with all reporting periods
+        periods = ReportingPeriod.query.all()
+        return render_template('remove_reporting_period.html', periods=periods)
+
+
 
     @app.route('/view_reports', methods=['GET', 'POST'])
     @login_required

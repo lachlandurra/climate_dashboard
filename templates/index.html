@@ -10,7 +10,7 @@
         <div class="backlog-container">
             <h2>Reporting Periods</h2>
             <a href="{{ url_for('create_reporting_period') }}" class="global-btn">Add Reporting Period</a>
-            <button class="global-btn" id="removeReportingPeriodButton">Remove Reporting Period</button>
+            <a href="{{ url_for('remove_reporting_period') }}" class="global-btn">Remove Reporting Period</a>
             <select id="reportingPeriodDropdown" style="display:none;"></select>
         </div>
         
