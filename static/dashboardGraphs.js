@@ -2,8 +2,8 @@ const svgParams = {
     width: 600,
     height: 500,
     margin: {top: 130, right: 20, bottom: 130, left: 70},
-    subgroups: ['co2_solar', 'other_emissions'],
-    color: d3.scaleOrdinal().domain(['co2_solar', 'other_emissions']).range(['#e41a1c','#377eb8'])
+    subgroups: ['co2_solar', 'other_emissions', 'total_emissions'],
+    color: d3.scaleOrdinal().domain(['co2_solar', 'other_emissions', 'total_emissions']).range(['#e41a1c','#377eb8', '#4daf4a'])
 };
 
 function createSVG(containerId) {
@@ -25,9 +25,9 @@ function createTitle(svg, title) {
         .text(title);
 }
 
-function createLegend(svg, width) {
+function createLegend(svg, width, subgroups) {
     const legend = svg.selectAll("legendGroup")
-        .data(svgParams.subgroups)
+        .data(subgroups)
         .enter().append("g")
             .attr("transform", (d, i) => `translate(0,${i * 20 - svgParams.margin.top/2})`);
 
@@ -41,8 +41,21 @@ function createLegend(svg, width) {
         .attr("x", 24)
         .attr("y", 9.5)
         .attr("dy", "0.32em")
-        .text(d => d === 'co2_solar' ? "Solar PV Emissions" : "Other Emissions");
+        .text(d => {
+            switch(d) {
+                case 'co2_solar':
+                    return "Solar PV Emissions";
+                case 'other_emissions':
+                    return "Other Emissions";
+                case 'total_emissions':
+                    return "Total Emissions";
+                default:
+                    return d;
+            }
+        });
 }
+
+
 
 function setupBars(svg, x, y, xSubgroup, data) {
     svg.append("g")
@@ -74,7 +87,7 @@ function createGraph(data, containerId, titleText, xLabel) {
 
     // Check if 'total_emissions' exists in the data
     const hasTotalEmissions = data.some(d => d.total_emissions !== undefined);
-    const subgroups = hasTotalEmissions ? ['co2_solar', 'other_emissions', 'total_emissions'] : ['co2_solar', 'other_emissions'];
+    const subgroups = hasTotalEmissions ? ['co2_solar', 'other_emissions', 'total_emissions'] : ['co2_solar', 'other_emissions'];    
 
     const y = d3.scaleLinear()
         .domain([0, d3.max(data, d => {
@@ -123,7 +136,59 @@ function createGraph(data, containerId, titleText, xLabel) {
         .style("font-size", "14px")
         .text("Emissions");
 
-    createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right);
+        createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
+}
+
+function createCostSavingsGraph(data, containerId, titleText) {
+    const svgParams = { 
+        width: 500, 
+        height: 300, 
+        margin: {top: 30, right: 30, bottom: 70, left: 60}
+    };
+
+    const svg = d3.select(containerId)
+        .append("svg")
+            .attr("width", svgParams.width)
+            .attr("height", svgParams.height)
+        .append("g")
+            .attr("transform", `translate(${svgParams.margin.left},${svgParams.margin.top})`);
+
+    // Create X axis
+    const x = d3.scaleBand()
+        .range([0, svgParams.width - svgParams.margin.left - svgParams.margin.right])
+        .domain(data.map(d => d.name))
+        .padding(0.2);
+    
+    svg.append("g")
+        .attr("transform", `translate(0,${svgParams.height - svgParams.margin.top - svgParams.margin.bottom})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "translate(-10,0)rotate(-45)")
+        .style("text-anchor", "end");
+
+    // Add Y axis
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.cost_savings)])
+        .range([svgParams.height - svgParams.margin.top - svgParams.margin.bottom, 0]);
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    // Create bars
+    svg.selectAll("bars")
+        .data(data)
+        .enter().append("rect")
+        .attr("x", d => x(d.name))
+        .attr("y", d => y(d.cost_savings))
+        .attr("width", x.bandwidth())
+        .attr("height", d => svgParams.height - svgParams.margin.top - svgParams.margin.bottom - y(d.cost_savings))
+        .attr("fill", "#69b3a2");
+
+    // Add title
+    svg.append("text")
+        .attr("x", (svgParams.width - svgParams.margin.left - svgParams.margin.right) / 2)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .text(titleText);
 }
 
 function createEmissionsByReportingPeriodGraph(data) {
@@ -149,21 +214,8 @@ function createEmissionsByCouncilAndBusinessGraph(data) {
 }
 
 function createTop5TotalEmissionsGraph(data) {
-    // Assuming that the 'createGraph' function accepts data in a certain format.
-    // You might need to adjust the below transformation according to your graphing library.
-    const transformedData = data.map(entry => {
-        return {
-            name: entry.name,
-            co2_solar: entry.co2_solar,
-            other_emissions: entry.other_emissions,
-            total_emissions: entry.total_emissions
-        };
-    });
+    const sortedData = data.sort((a, b) => b.total_emissions - a.total_emissions).slice(0, 5);
 
-    const sortedData = transformedData.sort((a, b) => b.total_emissions - a.total_emissions).slice(0, 5);
-
-    // The createGraph function will need to handle the plotting of three bars.
-    // I'm providing a general call here, but you will likely need to adjust it depending on your library.
     createGraph(sortedData, "#top5TotalEmissions", "Top 5 Facilities by Total Emissions", "Facility");
 }
 
@@ -180,12 +232,12 @@ function createTop5OtherEmissionsGraph(data) {
 
 function createTop5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => b.cost_savings - a.cost_savings).slice(0, 5);
-    createGraph(sortedData, "#top5CostSavings", "Top 5 Facilities by Cost Savings", "Facility");
+    createCostSavingsGraph(sortedData, "#top5CostSavings", "Top 5 Facilities by Cost Savings");
 }
 
 function createBottom5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => a.cost_savings - b.cost_savings).slice(0, 5);
-    createGraph(sortedData, "#bottom5CostSavings", "Bottom 5 Facilities by Cost Savings", "Facility");
+    createCostSavingsGraph(sortedData, "#bottom5CostSavings", "Bottom 5 Facilities by Cost Savings");
 }
 
 function createPieChartOfCostSavings(data) {
