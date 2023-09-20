@@ -217,6 +217,47 @@ def create_app():
 
         return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 
+    @app.route('/api/emissions_by_reporting_period')
+    @login_required
+    def api_emissions_by_reporting_period():
+        periods = ReportingPeriod.query.all()
+        data = []
+        for period in periods:
+            reports = period.reports
+            total_co2_solar = sum([r.co2_emissions_solar for r in reports])
+            total_other = sum([r.other_emissions for r in reports])
+            data.append({
+                'start_month': period.start_month,
+                'end_month': period.end_month,
+                'start_year': period.start_year,
+                'end_year': period.end_year,
+                'co2_solar': total_co2_solar,
+                'other_emissions': total_other
+            })
+        return jsonify(data)
+    
+    @app.route('/api/emissions_by_council_and_business')
+    @login_required
+    def api_emissions_by_council_and_business():
+        businesses_and_facilities = BusinessOrFacility.query.all()
+        data = []
+
+        for entity in businesses_and_facilities:
+            reports = entity.reports
+            total_co2_solar = sum([r.co2_emissions_solar for r in reports])
+            total_other = sum([r.other_emissions for r in reports])
+
+            data.append({
+                'name': entity.name,
+                'type': entity.type,  # This will be either 'local business' or 'council facility'
+                'co2_solar': total_co2_solar,
+                'other_emissions': total_other
+            })
+
+        return jsonify(data)
+
+
+
     @app.route('/logout')
     @login_required
     def logout():
@@ -229,4 +270,3 @@ if __name__ == '__main__':
     app = create_app()
     with app.app_context():
         db.create_all()
-    app.run(debug=True)

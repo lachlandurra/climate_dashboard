@@ -19,7 +19,19 @@
         <div class="backlog-container">
             <h2>View and Edit Reports</h2>
             <a href="{{ url_for('view_reports') }}" class="global-btn">View / Edit Reports</a>
-        </div>   
+        </div>
+
+        <!-- Emissions By Period div -->
+        <div class="backlog-container">
+            <h2>Graphs</h2>
+            <div id="emissionsByPeriod"></div>
+            <div id="emissionsByCouncilAndBusiness"></div>
+        </div>
+        
     </div>
+    
 </div>
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="{{ url_for('static', filename='dashboardGraphs.js') }}"></script>
 {% endblock %}

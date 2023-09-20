@@ -1,7 +1,6 @@
-# models.py
-
 from app import db
 from flask_login import UserMixin
+from sqlalchemy.ext.hybrid import hybrid_property 
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -35,5 +34,7 @@ class EmissionReport(db.Model):
     def type(self):
         return self.business_or_facility.type
 
-    
-
+    # Add the hybrid_property for other_emissions
+    @hybrid_property
+    def other_emissions(self):
+        return self.total_emissions - self.co2_emissions_solar
