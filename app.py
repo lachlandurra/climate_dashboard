@@ -1,16 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate  
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
-bcrypt = Bcrypt()
-login_manager = LoginManager()
 migrate = Migrate()
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'info'
 
 def create_app():
     app = Flask(__name__)
@@ -21,49 +15,16 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
 
     from models import User, ReportingPeriod, EmissionReport, BusinessOrFacility
 
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-
     @app.route('/')
-    @login_required
+    
     def index():
         return render_template('index.html')
 
-    @app.route('/register', methods=['GET', 'POST'])
-    def register():
-        if current_user.is_authenticated:
-            return redirect(url_for('index'))
-        if request.method == 'POST':
-            username = request.form['username']
-            password = request.form['password']
-            hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-            user = User(username=username, password=hashed_pw)
-            db.session.add(user)
-            db.session.commit()
-            return redirect(url_for('login'))
-        return render_template('register.html')
-
-    @app.route('/login', methods=['GET', 'POST'])
-    def login():
-        if current_user.is_authenticated:
-            return redirect(url_for('index'))
-        if request.method == 'POST':
-            username = request.form['username']
-            password = request.form['password']
-            user = User.query.filter_by(username=username).first()
-            if user and bcrypt.check_password_hash(user.password, password):
-                login_user(user)
-                return redirect(url_for('index'))
-        return render_template('login.html')
-
     @app.route('/create_reporting_period', methods=['GET', 'POST'])
-    @login_required
+    
     def create_reporting_period():
         # this creates a new reporting period, where the user can enter the start and end month and year
         if request.method == 'POST':
@@ -78,7 +39,7 @@ def create_app():
         return render_template('create_reporting_period.html')
 
     @app.route('/api/all_reporting_periods', methods=['GET'])
-    @login_required
+    
     def all_reporting_periods():
         periods = ReportingPeriod.query.all()
         return jsonify([{
@@ -90,7 +51,7 @@ def create_app():
         } for period in periods])
 
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
-    @login_required
+    
     def remove_reporting_period():
         if request.method == 'POST':
             period_id = request.form.get('reporting_period_id')
@@ -110,7 +71,7 @@ def create_app():
 
 
     @app.route('/view_reports', methods=['GET', 'POST'])
-    @login_required
+    
     def view_reports():
         reporting_periods = ReportingPeriod.query.all()
 
@@ -151,7 +112,7 @@ def create_app():
                                 lb_total_solar_savings=lb_total_solar_savings, lb_total_cost_savings=lb_total_cost_savings)
 
     @app.route('/update_report', methods=['POST'])
-    @login_required
+    
     def update_report():
         report_id = request.form.get('report_id')
         column_name = request.form.get('column_name')
@@ -178,7 +139,7 @@ def create_app():
         return jsonify(status="success")
 
     @app.route('/delete_report/<int:report_id>', methods=['POST'])
-    @login_required
+    
     def delete_report(report_id):
         report = EmissionReport.query.get(report_id)
         
@@ -200,7 +161,7 @@ def create_app():
             return jsonify(status="error", message="Report not found")
 
     @app.route('/add_business_report', methods=['GET', 'POST'])
-    @login_required
+    
     def add_business_report():
         businesses_or_facilities = BusinessOrFacility.query.all()  # Get all businesses
         reporting_periods = ReportingPeriod.query.all()
@@ -246,7 +207,7 @@ def create_app():
         return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 
     @app.route('/api/emissions_by_reporting_period')
-    @login_required
+    
     def api_emissions_by_reporting_period():
         periods = ReportingPeriod.query.all()
         data = []
@@ -265,7 +226,7 @@ def create_app():
         return jsonify(data)
     
     @app.route('/api/emissions_by_council_and_business')
-    @login_required
+    
     def api_emissions_by_council_and_business():
         businesses_and_facilities = BusinessOrFacility.query.all()
         data = []
@@ -285,7 +246,7 @@ def create_app():
         return jsonify(data)
 
     @app.route('/api/top5_council_facilities_by_total_emissions')
-    @login_required
+    
     def top5_council_facilities_by_total_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -302,7 +263,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_total_emissions')
-    @login_required
+    
     def top5_local_businesses_by_total_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -319,7 +280,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_council_facilities_by_solar_pv')
-    @login_required
+    
     def top5_council_facilities_by_solar_pv():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -335,7 +296,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_solar_pv')
-    @login_required
+    
     def top5_local_businesses_by_solar_pv():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -351,7 +312,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_council_facilities_by_other_emissions')
-    @login_required
+    
     def top5_council_facilities_by_other_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -367,7 +328,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_other_emissions')
-    @login_required
+    
     def top5_local_businesses_by_other_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -383,7 +344,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_facilities_by_cost_savings')
-    @login_required
+    
     def top5_facilities_by_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -398,7 +359,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/bottom5_facilities_by_cost_savings')
-    @login_required
+    
     def bottom5_facilities_by_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -413,7 +374,7 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/pie_chart_cost_savings')
-    @login_required
+    
     def pie_chart_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -427,7 +388,7 @@ def create_app():
         return jsonify(data)
 
     @app.route('/logout')
-    @login_required
+    
     def logout():
         logout_user()
         return redirect(url_for('index'))
