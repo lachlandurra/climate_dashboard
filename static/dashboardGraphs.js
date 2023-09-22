@@ -7,13 +7,18 @@ const svgParams = {
 };
 
 function createSVG(containerId) {
-    return d3.select(containerId)
+    let svg = d3.select(containerId)
         .append("svg")
         .attr("width", svgParams.width)
         .attr("height", svgParams.height)
         .append("g")
         .attr("transform", `translate(${svgParams.margin.left},${svgParams.margin.top})`);
+
+    applyFontStyles(svg);
+
+    return svg;
 }
+
 
 function createTitle(svg, title) {
     svg.append("text")
@@ -23,6 +28,8 @@ function createTitle(svg, title) {
         .attr("font-size", "20px")
         .attr("font-weight", "bold")
         .text(title);
+    applyFontStyles(svg);
+
 }
 
 function createLegend(svg, width, subgroups) {
@@ -53,6 +60,8 @@ function createLegend(svg, width, subgroups) {
                     return d;
             }
         });
+    applyFontStyles(svg);
+
 }
 
 function setupBars(svg, x, y, xSubgroup, data) {
@@ -135,13 +144,15 @@ function createGraph(data, containerId, titleText, xLabel) {
         .text("Emissions");
 
         createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
+    applyFontStyles(svg);
+
 }
 
 function createCostSavingsGraph(data, containerId, titleText) {
     const svgParams = { 
         width: 500, 
         height: 300, 
-        margin: {top: 30, right: 30, bottom: 70, left: 60}
+        margin: {top: 30, right: 30, bottom: 120, left: 60}
     };
 
     const svg = d3.select(containerId)
@@ -187,6 +198,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
         .attr("y", -10)
         .attr("text-anchor", "middle")
         .text(titleText);
+    applyFontStyles(svg);
 }
 
 function createEmissionsByReportingPeriodGraph(data) {
@@ -244,6 +256,13 @@ function createBottom5CostSavingsGraph(data) {
     const sortedData = data.sort((a, b) => a.cost_savings - b.cost_savings).slice(0, 5);
     createCostSavingsGraph(sortedData, "#bottom5CostSavings", "Bottom 5 Facilities by Cost Savings");
 }
+
+function applyFontStyles(svg) {
+    svg.selectAll("text")
+        .style("font-family", "'Montserrat', sans-serif")
+        .style("font-weight", "600");
+}
+
 
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/emissions_by_reporting_period')
