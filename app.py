@@ -19,12 +19,10 @@ def create_app():
     from models import User, ReportingPeriod, EmissionReport, BusinessOrFacility
 
     @app.route('/')
-    
     def index():
         return render_template('index.html')
 
     @app.route('/create_reporting_period', methods=['GET', 'POST'])
-    
     def create_reporting_period():
         # this creates a new reporting period, where the user can enter the start and end month and year
         if request.method == 'POST':
@@ -39,7 +37,6 @@ def create_app():
         return render_template('create_reporting_period.html')
 
     @app.route('/api/all_reporting_periods', methods=['GET'])
-    
     def all_reporting_periods():
         periods = ReportingPeriod.query.all()
         return jsonify([{
@@ -51,7 +48,6 @@ def create_app():
         } for period in periods])
 
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
-    
     def remove_reporting_period():
         if request.method == 'POST':
             period_id = request.form.get('reporting_period_id')
@@ -71,7 +67,6 @@ def create_app():
 
 
     @app.route('/view_reports', methods=['GET', 'POST'])
-    
     def view_reports():
         reporting_periods = ReportingPeriod.query.all()
 
@@ -112,7 +107,6 @@ def create_app():
                                 lb_total_solar_savings=lb_total_solar_savings, lb_total_cost_savings=lb_total_cost_savings)
 
     @app.route('/update_report', methods=['POST'])
-    
     def update_report():
         report_id = request.form.get('report_id')
         column_name = request.form.get('column_name')
@@ -139,7 +133,6 @@ def create_app():
         return jsonify(status="success")
 
     @app.route('/delete_report/<int:report_id>', methods=['POST'])
-    
     def delete_report(report_id):
         report = EmissionReport.query.get(report_id)
         
@@ -161,7 +154,6 @@ def create_app():
             return jsonify(status="error", message="Report not found")
 
     @app.route('/add_business_report', methods=['GET', 'POST'])
-    
     def add_business_report():
         businesses_or_facilities = BusinessOrFacility.query.all()  # Get all businesses
         reporting_periods = ReportingPeriod.query.all()
@@ -207,7 +199,6 @@ def create_app():
         return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 
     @app.route('/api/emissions_by_reporting_period')
-    
     def api_emissions_by_reporting_period():
         periods = ReportingPeriod.query.all()
         data = []
@@ -226,7 +217,6 @@ def create_app():
         return jsonify(data)
     
     @app.route('/api/emissions_by_council_and_business')
-    
     def api_emissions_by_council_and_business():
         businesses_and_facilities = BusinessOrFacility.query.all()
         data = []
@@ -246,7 +236,6 @@ def create_app():
         return jsonify(data)
 
     @app.route('/api/top5_council_facilities_by_total_emissions')
-    
     def top5_council_facilities_by_total_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -263,7 +252,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_total_emissions')
-    
     def top5_local_businesses_by_total_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -280,7 +268,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_council_facilities_by_solar_pv')
-    
     def top5_council_facilities_by_solar_pv():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -296,7 +283,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_solar_pv')
-    
     def top5_local_businesses_by_solar_pv():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -312,7 +298,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_council_facilities_by_other_emissions')
-    
     def top5_council_facilities_by_other_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='council facility').all()
         data = []
@@ -328,7 +313,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_local_businesses_by_other_emissions')
-    
     def top5_local_businesses_by_other_emissions():
         facilities = BusinessOrFacility.query.filter_by(type='local business').all()
         data = []
@@ -344,7 +328,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/top5_facilities_by_cost_savings')
-    
     def top5_facilities_by_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -359,7 +342,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/bottom5_facilities_by_cost_savings')
-    
     def bottom5_facilities_by_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -374,7 +356,6 @@ def create_app():
         return jsonify(data[:5])
 
     @app.route('/api/pie_chart_cost_savings')
-    
     def pie_chart_cost_savings():
         facilities = BusinessOrFacility.query.all()
         data = []
@@ -388,7 +369,6 @@ def create_app():
         return jsonify(data)
 
     @app.route('/logout')
-    
     def logout():
         logout_user()
         return redirect(url_for('index'))
