@@ -9,10 +9,13 @@ $(document).ready(function() {
     $('#business_or_facility').on('change', function() {
         if ($(this).val() === 'new') {
             $('#newBusinessFields').show();
+            $('#name').attr('required', true);
         } else {
             $('#newBusinessFields').hide();
+            $('#name').removeAttr('required');
         }
-    }).trigger('change');  // Trigger the change event to set the initial state
+    }).trigger('change'); // Trigger the change event to set the initial state
+    
 
     function updateValue(element, newValue) {
         var cell = element.closest('td');

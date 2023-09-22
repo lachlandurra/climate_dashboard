@@ -489,3 +489,16 @@ td:hover .display {
     flex: 1;
     margin: 0 10px;  /* Optional: Adds a little space between the graphs */
 }
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 120px;
+    height: 28px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}

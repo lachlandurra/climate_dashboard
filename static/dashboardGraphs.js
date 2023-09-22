@@ -20,6 +20,7 @@ function createSVG(containerId) {
 }
 
 
+
 function createTitle(svg, title) {
     svg.append("text")
         .attr("x", svgParams.width / 2 - 40)
@@ -42,7 +43,7 @@ function createLegend(svg, width, subgroups) {
         .attr("x", 0)
         .attr("width", 19)
         .attr("height", 19)
-        .attr("fill", svgParams.color);
+        .attr("fill", d => svgParams.color(d));
 
     legend.append("text")
         .attr("x", 24)
@@ -64,8 +65,12 @@ function createLegend(svg, width, subgroups) {
 
 }
 
-function setupBars(svg, x, y, xSubgroup, data) {
-    svg.append("g")
+function setupBars(barsGroup, x, y, xSubgroup, data) {
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    barsGroup.append("g")
         .selectAll("g")
         .data(data)
         .enter()
@@ -78,11 +83,62 @@ function setupBars(svg, x, y, xSubgroup, data) {
             .attr("y", d => y(d.value))
             .attr("width", xSubgroup.bandwidth())
             .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom)
-            .attr("fill", d => svgParams.color(d.key));
+            .attr("fill", d => svgParams.color(d.key))
+            .on("mouseover", function(d) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr('opacity', 0.6)
+                    .attr('y', d => y(d.value) - 5)  // Subtract 5 pixels from the Y position for a small animation
+                    .attr('height', d => svgParams.height - y(d.value) + 5 - svgParams.margin.top - svgParams.margin.bottom);  // Add 5 pixels to the height for a small animation                                   
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                    tooltip.html(getFriendlyLabel(d.key) + "<br>" + d.value)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mousemove", function(d) {
+                tooltip.style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("fill", svgParams.color(d.key))
+                    .attr('opacity', 1)
+                    .attr('x', d => xSubgroup(d.key))
+                    .attr('width', xSubgroup.bandwidth())
+                    // Revert the y and height to their original values
+                    .attr("y", d => y(d.value))
+                    .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom);                    
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });    
 }
+
 
 function createGraph(data, containerId, titleText, xLabel) {
     const svg = createSVG(containerId);
+
+    const barsGroup = svg.append('g');
+
+    // Zoom handler
+    function zoomed() {
+        console.log("Zoomed function called");
+        const currentTransform = d3.event.transform;
+        barsGroup.attr("transform", currentTransform);
+    }
+    
+    const zoom = d3.zoom()
+        .scaleExtent([1, 5])
+        .translateExtent([[0, 0], [svgParams.width, svgParams.height]])
+        .on('zoom', zoomed);
+
+    svg.call(zoom);
+
     createTitle(svg, titleText);
 
     const groups = data.map(d => d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`);
@@ -92,7 +148,6 @@ function createGraph(data, containerId, titleText, xLabel) {
         .range([0, svgParams.width - svgParams.margin.left - svgParams.margin.right])
         .padding([0.2]);
 
-    // Check if 'total_emissions' exists in the data
     const hasTotalEmissions = data.some(d => d.total_emissions !== undefined);
     const subgroups = hasTotalEmissions ? ['co2_solar', 'other_emissions', 'total_emissions'] : ['co2_solar', 'other_emissions'];    
 
@@ -109,7 +164,7 @@ function createGraph(data, containerId, titleText, xLabel) {
         .range([0, x.bandwidth()])
         .padding([0.05]);
 
-    setupBars(svg, x, y, xSubgroup, data);
+    setupBars(barsGroup, x, y, xSubgroup, data);
 
     // X-axis
     svg.append("g")
@@ -143,12 +198,13 @@ function createGraph(data, containerId, titleText, xLabel) {
         .style("font-size", "14px")
         .text("Emissions");
 
-        createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
-    applyFontStyles(svg);
+    createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
 
+    applyFontStyles(svg);
 }
 
 function createCostSavingsGraph(data, containerId, titleText) {
+    
     const svgParams = { 
         width: 500, 
         height: 300, 
@@ -161,6 +217,9 @@ function createCostSavingsGraph(data, containerId, titleText) {
             .attr("height", svgParams.height)
         .append("g")
             .attr("transform", `translate(${svgParams.margin.left},${svgParams.margin.top})`);
+
+    
+    
 
     // Create X axis
     const x = d3.scaleBand()
@@ -183,7 +242,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
         .call(d3.axisLeft(y));
 
     // Create bars
-    svg.selectAll("bars")
+    const bars = svg.selectAll("bars")
         .data(data)
         .enter().append("rect")
         .attr("x", d => x(d.name))
@@ -192,6 +251,45 @@ function createCostSavingsGraph(data, containerId, titleText) {
         .attr("height", d => svgParams.height - svgParams.margin.top - svgParams.margin.bottom - y(d.cost_savings))
         .attr("fill", "#69b3a2");
 
+    
+    const tooltip = d3.select(".tooltip");
+
+    bars.on("mouseenter", function(d) {
+        // Increase the size of the hovered bar and change its opacity
+        d3.select(this)
+            .transition()
+            .duration(300)
+            .attr('opacity', 0.6)
+            .attr('y', d => y(d.cost_savings) - 5)  // Subtract 5 pixels from the Y position for a small animation
+            .attr('height', d => svgParams.height - svgParams.margin.top - svgParams.margin.bottom - y(d.cost_savings) + 5);  // Add 5 pixels to the height for a small animation
+
+        // Show the tooltip
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html("Cost Savings: " + d.cost_savings)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mousemove", function(d) {
+        tooltip.style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseleave", function(d) {
+        // Return the bar to its original state
+        d3.select(this)
+            .transition()
+            .duration(300)
+            .attr('opacity', 1)
+            .attr('y', d => y(d.cost_savings))
+            .attr('height', d => svgParams.height - svgParams.margin.top - svgParams.margin.bottom - y(d.cost_savings));
+
+        // Hide the tooltip
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+    });
+
     // Add title
     svg.append("text")
         .attr("x", (svgParams.width - svgParams.margin.left - svgParams.margin.right) / 2)
@@ -199,6 +297,88 @@ function createCostSavingsGraph(data, containerId, titleText) {
         .attr("text-anchor", "middle")
         .text(titleText);
     applyFontStyles(svg);
+}
+
+function applyFontStyles(svg) {
+    svg.selectAll("text")
+        .style("font-family", "'Montserrat', sans-serif")
+        .style("font-weight", "600");
+}
+
+function handleBarHover(svg, tooltip) {
+    const bars = svg.selectAll("rect");
+
+    bars.on("mouseenter", function(event, d) {
+        // Increase the height of the hovered bar and change its opacity
+        d3.select(this)
+            .transition()
+            .duration(300)
+            .attr('opacity', 0.6)
+            .attr('y', d => yScale(d.value) - 5)  // Subtract 5 pixels from the Y position for a small animation
+            .attr('height', d => height - yScale(d.value) + 5);  // Add 5 pixels to the height for a small animation
+        
+        // Display tooltip
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html(`
+            <strong>${d.key}</strong>: ${d.value}
+        `)
+        .style("left", (event.pageX) + "px")
+        .style("top", (event.pageY - 28) + "px");
+        
+        // Add horizontal line at the height of hovered bar
+        const y = yScale(d.value);
+        svg.append('line')
+            .attr('id', 'limit')
+            .attr('x1', 0)
+            .attr('y1', y)
+            .attr('x2', width)
+            .attr('y2', y);
+        
+        // Add divergence text above each bar
+        bars.append('text')
+            .attr('class', 'divergence')
+            .attr('x', d => xScale(d.key) + xScale.bandwidth() / 2)
+            .attr('y', d => yScale(d.value) + 30)
+            .attr('fill', 'white')
+            .attr('text-anchor', 'middle')
+            .text((d, idx) => {
+                const divergence = (d.value - data[idx].value).toFixed(1);
+                let text = '';
+                if (divergence > 0) text += '+';
+                text += `${divergence}%`;
+                return d !== data[idx] ? text : '';
+            });
+    })
+    .on("mouseleave", function(d) {
+        // Return the bar to its original state
+        d3.select(this)
+            .transition()
+            .duration(300)
+            .attr('opacity', 1)
+            .attr('y', d => yScale(d.value))
+            .attr('height', d => height - yScale(d.value));
+
+        // Hide tooltip
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+
+        // Remove the horizontal line and divergence text
+        svg.selectAll('#limit').remove();
+        svg.selectAll('.divergence').remove();
+    });
+}
+
+function getFriendlyLabel(key) {
+    const labels = {
+        'other_emissions': 'Other Emissions',
+        'co2_solar': 'Solar PV Emissions',
+        'total_emissions': 'Total Emissions'
+        // Add more mappings as needed
+    };
+    return labels[key] || key;  // returns the key itself if no mapping found
 }
 
 function createEmissionsByReportingPeriodGraph(data) {
@@ -257,13 +437,6 @@ function createBottom5CostSavingsGraph(data) {
     createCostSavingsGraph(sortedData, "#bottom5CostSavings", "Bottom 5 Facilities by Cost Savings");
 }
 
-function applyFontStyles(svg) {
-    svg.selectAll("text")
-        .style("font-family", "'Montserrat', sans-serif")
-        .style("font-weight", "600");
-}
-
-
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/emissions_by_reporting_period')
         .then(response => response.json())
@@ -304,4 +477,9 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/bottom5_facilities_by_cost_savings')
         .then(response => response.json())
         .then(data => createBottom5CostSavingsGraph(data));
+
+    // Tooltip code
+    const tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 });
