@@ -123,28 +123,37 @@ function setupBars(barsGroup, x, y, xSubgroup, data, svg, xAxisGroup, yAxisGroup
         .style("pointer-events", "all");
 
     // Adding the zoom functionality
-    svg.call(d3.zoom()
-        .filter(event => {
-            // Ignore mousedown, allow everything else
-            return !event.type.includes('mousedown');
-        })
-        .extent([[0, 0], [svgParams.width, svgParams.height]])
-        .scaleExtent([1, 8])
-        .on("start", function() {
-            svg.select("rect").style("pointer-events", "all");
-        })
-        .on("zoom", function({ transform }) {
-            const updatedX = x.range().map(d => transform.applyX(d));
-
-            xAxisGroup.call(d3.axisBottom(x.domain(groups).range(updatedX)).tickSize(0));
-
-            // Adjust the bars according to the zoomed scale
-            barsGroup.selectAll("g")
-                .attr("transform", d => `translate(${x(d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`)},0)`);
-        })
-        .on("end", function() {
-            svg.select("rect").style("pointer-events", "none");
-        }));
+    // svg.call(d3.zoom()
+    //     .filter(event => {
+    //         // Ignore mousedown, allow everything else
+    //         return !event.type.includes('mousedown');
+    //     })
+    //     .extent([[0, 0], [svgParams.width, svgParams.height]])
+    //     .scaleExtent([1, 8])
+    //     .on("start", function() {
+    //         svg.select("rect").style("pointer-events", "all");
+    //     })
+    //     .on("zoom", function({ transform }) {
+    //         // Apply the transform to the x scale's range
+    //         const updatedX = x.range().map(d => transform.applyX(d));
+    //         x.range(updatedX);
+        
+    //         // Update the X axis
+    //         xAxisGroup.call(d3.axisBottom(x).tickSize(0))
+    //             .selectAll("text")
+    //             .style("text-anchor", "end")
+    //             .attr("dx", "-.8em")
+    //             .attr("dy", ".15em")
+    //             .attr("transform", "rotate(-65)");
+        
+    //         // Adjust the bars according to the zoomed scale
+    //         barsGroup.selectAll("g.parent")
+    //             .attr("transform", d => `translate(${x(d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`)},0)`);
+    //     })
+        
+    //     .on("end", function() {
+    //         svg.select("rect").style("pointer-events", "none");
+    //     }));
 
 }
 
@@ -230,11 +239,6 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
     const svg = createSVG(containerId);
     const linesGroup = svg.append('g');
 
-    function zoomed() {
-        const currentTransform = d3.event.transform;
-        linesGroup.attr("transform", currentTransform);
-    }
-
     function splitMultilineText(selection, delimiter) {
         selection.each(function() {
             const text = d3.select(this),
@@ -255,14 +259,6 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
             }
         });
     }
-    
-    
-    const zoom = d3.zoom()
-        .scaleExtent([1, 5])
-        .translateExtent([[0, 0], [svgParams.width, svgParams.height]])
-        .on('zoom', zoomed);
-
-    svg.call(zoom);
 
     createTitle(svg, titleText);
 
@@ -322,7 +318,6 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
 
     svg.selectAll(".tick text")  // select all tick labels
         .call(splitMultilineText, "|");  // call function to split multiline text
-    
 
     // Add dots for solar_emissions
     svg.selectAll(".dot-solar")
@@ -331,17 +326,27 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
         .attr("class", "dot-solar")
         .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
         .attr("cy", d => y(d.solar_emissions))
-        .attr("r", 3) // Radius of circle
+        .attr("r", 4.5) // Radius of circle
         .attr("fill", svgParams.color('co2_solar'))
 
-        .on("mouseover", function(d) {
+    svg.selectAll(".dot-solar-hover")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot-solar-hover")
+        .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .attr("cy", d => y(d.solar_emissions))
+        .attr("r", 12) // Larger radius for hover area
+        .style("fill", "none")
+        .style("pointer-events", "all")  // Ensures the invisible circle can capture mouse events
+        .on("mouseover", function(event, d) {
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
             tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions}`)
-                .style("left", (d3.event.pageX + 5) + "px")
-                .style("top", (d3.event.pageY - 28) + "px");
+                .style("left", (event.pageX + 5) + "px")
+                .style("top", (event.pageY - 28) + "px");
         })
+        
         .on("mouseout", function(d) {
             tooltip.transition()
                 .duration(500)
@@ -355,17 +360,27 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
         .attr("class", "dot-other")
         .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
         .attr("cy", d => y(d.other_emissions))
-        .attr("r", 3) // Radius of circle
+        .attr("r", 4.5) // Radius of circle
         .attr("fill", svgParams.color('other_emissions'))
 
-        .on("mouseover", function(d) {
+    svg.selectAll(".dot-other-hover")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot-other-hover")
+        .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .attr("cy", d => y(d.other_emissions))
+        .attr("r", 12) // Larger radius for hover area
+        .style("fill", "none")
+        .style("pointer-events", "all")  // Ensures the invisible circle can capture mouse events
+        .on("mouseover", function(event, d) {
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
-            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Other Emissions: ${d.other_emissions}`)
-                .style("left", (d3.event.pageX + 5) + "px")
-                .style("top", (d3.event.pageY - 28) + "px");
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.other_emissions}`)
+                .style("left", (event.pageX + 5) + "px")
+                .style("top", (event.pageY - 28) + "px");
         })
+        
         .on("mouseout", function(d) {
             tooltip.transition()
                 .duration(500)
@@ -444,7 +459,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
     
     const tooltip = d3.select(".tooltip");
 
-    bars.on("mouseenter", function(d) {
+    bars.on("mouseenter", function(event, d) {
         // Increase the size of the hovered bar and change its opacity
         d3.select(this)
             .transition()
@@ -458,12 +473,12 @@ function createCostSavingsGraph(data, containerId, titleText) {
             .duration(200)
             .style("opacity", .9);
         tooltip.html("Cost Savings: " + d.cost_savings)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+            .style("left", (event.pageX) + "px")
+            .style("top", (event.pageY - 28) + "px");
     })
-    .on("mousemove", function(d) {
-        tooltip.style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+    .on("mousemove", function(event, d) {
+        tooltip.style("left", (event.pageX) + "px")
+            .style("top", (event.pageY - 28) + "px");
     })
     .on("mouseleave", function(d) {
         // Return the bar to its original state
@@ -571,8 +586,16 @@ function getFriendlyLabel(key) {
     return labels[key] || key;  // returns the key itself if no mapping found
 }
 
+function sortDataChronologically(data) {
+    return data.sort((a, b) => {
+        // Compare by start year, then by start month, then by end year, and finally by end month
+        return a.start_year - b.start_year || a.start_month - b.start_month || a.end_year - b.end_year || a.end_month - b.end_month;
+    });
+}
+
 function createEmissionsByReportingPeriodGraph(data) {
-    createGraph(data, "#emissionsByPeriod", "Emissions by Reporting Period", "Reporting Period");
+    const sortedData = sortDataChronologically(data);
+    createGraph(sortedData, "#emissionsByPeriod", "Emissions by Reporting Period", "Reporting Period");
 }
 
 function createEmissionsByCouncilAndBusinessGraph(data) {
