@@ -20,11 +20,18 @@
             <a href="{{ url_for('add_business_report') }}" class="global-btn">Add Business / Facility Emission Report</a>
         </div>
     </div>
+    <div class="backlogs">
         <div class="backlog-container">
             <h2>View and Edit Reports</h2>
             <a href="{{ url_for('view_reports') }}" class="global-btn">View / Edit Reports</a>
         </div>
 
+        <div class="backlog-container">
+            <h2>Download Reports</h2>
+            <a href="{{ url_for('download_excel') }}" class="global-btn">Download Data - Excel</a>
+            <a href="{{ url_for('download_word') }}" class="global-btn">Download Images - Word</a>
+        </div>
+    </div>
         <!-- Emissions By Period div -->
         <div class="backlog-container">
             <h2>General Emissions Graphs</h2>

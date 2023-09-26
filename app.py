@@ -1,6 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, send_file, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate  
+from flask import send_file
+import openpyxl
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -367,22 +371,71 @@ def create_app():
             })
         data.sort(key=lambda x: x['cost_savings'])
         return jsonify(data[:5])
-
-    @app.route('/api/pie_chart_cost_savings')
-    def pie_chart_cost_savings():
-        facilities = BusinessOrFacility.query.all()
-        data = []
-        for facility in facilities:
-            reports = facility.reports
-            cost_savings = sum([r.cost_savings for r in reports])
-            data.append({
-                'name': facility.name,
-                'cost_savings': cost_savings
-            })
-        return jsonify(data)
-        logout_user()
-        return redirect(url_for('index'))
     
+    @app.route('/download_excel')
+    def download_excel():
+        wb = openpyxl.Workbook()
+        
+        # Define the headers
+        headers = ["Name", "Type", "Start Month", "End Month", "Start Year", "End Year", 
+                "CO2 Emissions (Solar)", "Total Emissions", "Cost Savings", "Other Emissions"]
+
+        # Remove the default sheet created and start with a fresh workbook
+        wb.remove(wb.active)
+
+        # Loop through each unique reporting period
+        for period in ReportingPeriod.query.all():
+            # Create a new sheet for this reporting period
+            ws = wb.create_sheet(title=f"{period.start_month} {period.start_year} - {period.end_month} {period.end_year}")
+
+            # Write headers
+            for col_num, header in enumerate(headers, 1):
+                col_letter = get_column_letter(col_num)
+                ws['{}1'.format(col_letter)] = header
+                ws.column_dimensions[col_letter].width = len(header) + 5
+
+            # Write the data for this reporting period
+            row_num = 2
+            for report in EmissionReport.query.filter_by(reporting_period_id=period.id).all():
+                values = [
+                    report.business_or_facility.name,
+                    report.type,
+                    report.reporting_period.start_month,
+                    report.reporting_period.end_month,
+                    report.reporting_period.start_year,
+                    report.reporting_period.end_year,
+                    report.co2_emissions_solar,
+                    report.total_emissions,
+                    report.cost_savings,
+                    report.other_emissions
+                ]
+                for col_num, value in enumerate(values, 1):
+                    ws.cell(row=row_num, column=col_num, value=value)
+                row_num += 1
+
+        # Save the workbook to a bytes buffer
+        bytes_io = BytesIO()
+        wb.save(bytes_io)
+        bytes_io.seek(0)
+
+        return send_file(bytes_io, download_name="emission_reports.xlsx", as_attachment=True)
+
+    @app.route('/download_word', methods=['GET'])
+    def download_word():
+        doc = Document()
+
+        # Sample: Add a title and a graph (as an image) to the Word document
+        doc.add_heading('Emission Reports', level=1)
+
+        # NOTE: This assumes you've saved your graph as an image named 'graph.png'.
+        # You can generate graphs using libraries like Matplotlib, and then save them as images.
+        doc.add_picture('graph.png', width=Inches(6))
+
+        filename = "graphs.docx"
+        doc.save(filename)
+
+        return send_file(filename, as_attachment=True, cache_timeout=0, download_name="graphs.docx", mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+
     return app
 
 if __name__ == '__main__':
