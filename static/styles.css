@@ -480,14 +480,16 @@ td:hover .display {
 }
 
 .graphs-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
+    display: flex;           /* Make it a flex container */
+    flex-wrap: wrap;         /* If items don't fit on one line, move to the next line */
+    justify-content: center; /* Center items horizontally */
+    align-items: center;     /* Center items vertically */
 }
 
 .graph {
-    flex: 1;
-    margin: 0 10px;  /* Optional: Adds a little space between the graphs */
+    flex: 0 1 calc(50% - 10px); /* Each graph will try to take up roughly half of the container's width minus 10px for spacing */
+    margin: 5px;              /* Some space around each graph */
+    max-width: 100%;          /* Ensure it doesn't go beyond the container width */
 }
 
 .tooltip {
