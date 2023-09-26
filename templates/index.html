@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="welcome-text">
+        Welcome to the CEERP Data Dashboard!
+    </div>
+    <div class="backlogs">
+
+        <div class="backlog-container">
+            <h2>Reporting Periods</h2>
+            <a href="{{ url_for('create_reporting_period') }}" class="global-btn add-reporting">Add Reporting Period</a>
+            <a href="{{ url_for('remove_reporting_period') }}" class="global-btn remove-reporting">Remove Reporting Period</a>
+            <select id="reportingPeriodDropdown" style="display:none;"></select>
+        </div>
+        
+        
+        <div class="backlog-container">
+            <h2>Businesses & Facilities Emission Reports</h2>
+            <a href="{{ url_for('add_business_report') }}" class="global-btn add-business">Add Business / Facility Emission Report</a>
+        </div>
+    </div>
+    <div class="backlogs">
+        <div class="backlog-container">
+            <h2>View and Edit Reports</h2>
+            <a href="{{ url_for('view_reports') }}" class="global-btn">View / Edit Reports</a>
+        </div>
+
+        <div class="backlog-container">
+            <h2>Download Reports</h2>
+            <a href="{{ url_for('download_excel') }}" class="global-btn download-excel">Download Data - Excel</a>
+            <a href="#" onclick="downloadImagesAsWord()" class="global-btn download-word">Download Images - Word</a>
+        </div>
+    </div>
+        <!-- Emissions By Period div -->
+        <div class="backlog-container">
+            <h2>General Emissions Graphs</h2>
+            <div class="graphs-container">
+                <div id="emissionsByPeriod" class="graph"></div>
+                <div id="emissionsByCouncilAndBusiness" class="graph"></div>
+            </div>
+        </div>
+        <div class="backlog-container">
+            <h2>Council Facilities Emissions Graphs</h2>
+            <div class="graphs-container">
+                <div id="top5CouncilTotalEmissions" class="graph"></div>
+                <div id="top5CouncilSolarPVEmissions" class="graph"></div>
+            </div>
+            <div class="graphs-container">
+                <div id="top5CouncilOtherEmissions" class="graph"></div>
+            </div>
+        </div>
+        <div class="backlog-container">
+            <!-- Local Businesses Graphs -->
+            <h2>Local Businesses Emissions Graphs</h2>
+            <div class="graphs-container">
+                <div id="top5LocalBusinessTotalEmissions" class="graph"></div>
+                <div id="top5LocalBusinessSolarPVEmissions" class="graph"></div>
+            </div>
+            <div class="graphs-container">
+                <div id="top5LocalBusinessOtherEmissions" class="graph"></div>
+                <div id="emissionsOverTime" class="graph"></div>
+            </div>
+        </div>
+        <div class="backlog-container">
+            <h2>Cost Saving Graphs</h2>
+            <div class="graphs-container">
+                <div id="bottom5CostSavings" class="graph"></div>
+                <div id="top5CostSavings" class="graph"></div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script src="{{ url_for('static', filename='dashboardGraphs.js') }}"></script>
+{% endblock %}
