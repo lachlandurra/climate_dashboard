@@ -212,7 +212,7 @@ function createGraph(data, containerId, titleText, xLabel) {
         .style("text-anchor", "middle")
         .style("fill", "black")
         .style("font-size", "14px")
-        .text("Emissions");
+        .text("Emissions (tCo2e)");
 
     createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
 
@@ -233,7 +233,6 @@ function monthToNumber(monthString) {
     ];
     return months.indexOf(monthString);
 }
-
 
 function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) {
     const svg = createSVG(containerId);
@@ -342,7 +341,7 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
-            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions}`)
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions} tCo2e`)
                 .style("left", (event.pageX + 5) + "px")
                 .style("top", (event.pageY - 28) + "px");
         })
@@ -376,7 +375,7 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
-            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.other_emissions}`)
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.other_emissions} tCo2e`)
                 .style("left", (event.pageX + 5) + "px")
                 .style("top", (event.pageY - 28) + "px");
         })
@@ -402,7 +401,7 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
         .style("text-anchor", "middle")
         .style("fill", "black")
         .style("font-size", "14px")
-        .text("Emissions");
+        .text("Emissions (tCo2e)");
 
     createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, ['co2_solar', 'other_emissions']);
     applyFontStyles(svg);
@@ -413,7 +412,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
     const svgParams = { 
         width: 500, 
         height: 300, 
-        margin: {top: 30, right: 30, bottom: 120, left: 60}
+        margin: {top: 30, right: 30, bottom: 120, left: 90}
     };
 
     const svg = d3.select(containerId)
@@ -422,9 +421,6 @@ function createCostSavingsGraph(data, containerId, titleText) {
             .attr("height", svgParams.height)
         .append("g")
             .attr("transform", `translate(${svgParams.margin.left},${svgParams.margin.top})`);
-
-    
-    
 
     // Create X axis
     const x = d3.scaleBand()
@@ -445,6 +441,16 @@ function createCostSavingsGraph(data, containerId, titleText) {
         .range([svgParams.height - svgParams.margin.top - svgParams.margin.bottom, 0]);
     svg.append("g")
         .call(d3.axisLeft(y));
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -svgParams.margin.left+20)
+        .attr("x", -(svgParams.height - svgParams.margin.top - svgParams.margin.bottom) / 2)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("fill", "black")
+        .style("font-size", "14px")
+        .text("Cost Savings ($)");
 
     // Create bars
     const bars = svg.selectAll("bars")
