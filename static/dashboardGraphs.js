@@ -700,3 +700,61 @@ document.addEventListener('DOMContentLoaded', function() {
     .attr("class", "tooltip")
     .style("opacity", 0);
 });
+
+function svgToPng(svgElement) {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const width = parseInt(svgElement.getAttribute("width") || svgElement.viewBox.baseVal.width);
+        const height = parseInt(svgElement.getAttribute("height") || svgElement.viewBox.baseVal.height);
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const data = (new XMLSerializer()).serializeToString(svgElement);
+        const svg = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(svg);
+
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.src = url;
+    });
+}
+
+
+async function downloadImagesAsWord() {
+    const imageContainers = document.querySelectorAll('.graph');
+
+    const images = [];
+    for (const container of imageContainers) {
+        const svgElement = container.querySelector('svg');
+        if (svgElement) {
+            const pngData = await svgToPng(svgElement);
+            const title = container.closest(".backlog-container").querySelector("h2").textContent;
+
+            images.push({ title, data: pngData });
+        }
+    }
+
+    // Send the image data to the server
+    const response = await fetch('/download_word', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ images })
+    });
+    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'graphs.docx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+

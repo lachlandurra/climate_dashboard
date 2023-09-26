@@ -5,6 +5,9 @@ from flask import send_file
 import openpyxl
 from openpyxl.utils import get_column_letter
 from io import BytesIO
+from docx import Document
+import base64
+from docx.shared import Inches
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -420,22 +423,32 @@ def create_app():
 
         return send_file(bytes_io, download_name="emission_reports.xlsx", as_attachment=True)
 
-    @app.route('/download_word', methods=['GET'])
+    @app.route('/download_word', methods=['POST'])
     def download_word():
+        data = request.json  # assuming you send the data as JSON
+        images_data = data['images']
+
+        # Create a new document
         doc = Document()
+        
+        for img_data in images_data:
+            title = img_data['title']
+            img_base64 = img_data['data']
 
-        # Sample: Add a title and a graph (as an image) to the Word document
-        doc.add_heading('Emission Reports', level=1)
+            # Add the title
+            doc.add_heading(title, level=1)
 
-        # NOTE: This assumes you've saved your graph as an image named 'graph.png'.
-        # You can generate graphs using libraries like Matplotlib, and then save them as images.
-        doc.add_picture('graph.png', width=Inches(6))
+            # Convert base64 image to bytes and add it to the document
+            img_stream = BytesIO(base64.b64decode(img_base64.split(',')[1]))
+            doc.add_picture(img_stream, width=Inches(6))
 
-        filename = "graphs.docx"
-        doc.save(filename)
+        # Save the document to bytes buffer
+        bytes_io = BytesIO()
+        doc.save(bytes_io)
+        bytes_io.seek(0)
 
-        return send_file(filename, as_attachment=True, cache_timeout=0, download_name="graphs.docx", mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-
+        return send_file(bytes_io, download_name="graphs.docx", as_attachment=True)
+    
     return app
 
 if __name__ == '__main__':
