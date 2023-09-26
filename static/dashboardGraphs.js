@@ -63,91 +63,101 @@ function createLegend(svg, width, subgroups) {
 
 }
 
-function setupBars(barsGroup, x, y, xSubgroup, data) {
+function setupBars(barsGroup, x, y, xSubgroup, data, svg, xAxisGroup, yAxisGroup, groups) {
     const tooltip = d3.select("body").append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
 
-    barsGroup.append("g")
-        .selectAll("g")
+    const parentGs = barsGroup.selectAll("g.parent")
         .data(data)
         .enter()
         .append("g")
-        .attr("transform", d => `translate(${x(d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`)},0)`)
-        .selectAll("rect")
-        .data(d => svgParams.subgroups.map(key => ({key: key, value: d[key]})))
+        .classed("parent", true)
+        .attr("transform", d => `translate(${x(d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`)},0)`);
+
+    parentGs.selectAll("rect")
+        .data(d => svgParams.subgroups.map(key => ({ key: key, value: d[key] })))
         .enter().append("rect")
-            .attr("x", d => xSubgroup(d.key))
-            .attr("y", d => y(d.value))
-            .attr("width", xSubgroup.bandwidth())
-            .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom)
-            .attr("fill", d => svgParams.color(d.key))
-            .on("mouseover", function(d) {
-                d3.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr('opacity', 0.6)
-                    .attr('y', d => y(d.value) - 5)  // Subtract 5 pixels from the Y position for a small animation
-                    .attr('height', d => svgParams.height - y(d.value) + 5 - svgParams.margin.top - svgParams.margin.bottom);  // Add 5 pixels to the height for a small animation                                   
-                tooltip.transition()
-                    .duration(200)
-                    .style("opacity", .9);
-                    tooltip.html(getFriendlyLabel(d.key) + "<br>" + d.value)
-                    .style("left", (d3.event.pageX) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            })
-            .on("mousemove", function(d) {
-                tooltip.style("left", (d3.event.pageX) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            })
-            .on("mouseout", function(d) {
-                d3.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr("fill", svgParams.color(d.key))
-                    .attr('opacity', 1)
-                    .attr('x', d => xSubgroup(d.key))
-                    .attr('width', xSubgroup.bandwidth())
-                    // Revert the y and height to their original values
-                    .attr("y", d => y(d.value))
-                    .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom);                    
-                tooltip.transition()
-                    .duration(500)
-                    .style("opacity", 0);
-            });    
+        .attr("x", d => xSubgroup(d.key))
+        .attr("y", d => y(d.value))
+        .attr("width", xSubgroup.bandwidth())
+        .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom)
+        .attr("fill", d => svgParams.color(d.key))
+        .on("mouseover", function(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('opacity', 0.6)
+                .attr('y', d => y(d.value) - 5)  // Subtract 5 pixels from the Y position for a small animation
+                .attr('height', d => svgParams.height - y(d.value) + 5 - svgParams.margin.top - svgParams.margin.bottom);  // Add 5 pixels to the height for a small animation                                   
+
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            
+            const tooltipWidth = 200;  // estimate or dynamically calculate
+            const leftPosition = event.pageX + 10 + tooltipWidth > window.innerWidth ? event.pageX - tooltipWidth - 10 : event.pageX + 10;
+            tooltip.html(getFriendlyLabel(d.key) + "<br>" + d.value)
+                .style("left", leftPosition + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mousemove", function(event, d) {
+            const tooltipWidth = 200;  // estimate or dynamically calculate
+            const leftPosition = event.pageX + 10 + tooltipWidth > window.innerWidth ? event.pageX - tooltipWidth - 10 : event.pageX + 10;
+            tooltip.style("left", leftPosition + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('opacity', 1)
+                .attr('x', d => xSubgroup(d.key))
+                .attr('width', xSubgroup.bandwidth())
+                .attr("y", d => y(d.value))
+                .attr("height", d => svgParams.height - y(d.value) - svgParams.margin.top - svgParams.margin.bottom);
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        })
+        .style("pointer-events", "all");
+
+    // Adding the zoom functionality
+    svg.call(d3.zoom()
+        .filter(event => {
+            // Ignore mousedown, allow everything else
+            return !event.type.includes('mousedown');
+        })
+        .extent([[0, 0], [svgParams.width, svgParams.height]])
+        .scaleExtent([1, 8])
+        .on("start", function() {
+            svg.select("rect").style("pointer-events", "all");
+        })
+        .on("zoom", function({ transform }) {
+            const updatedX = x.range().map(d => transform.applyX(d));
+
+            xAxisGroup.call(d3.axisBottom(x.domain(groups).range(updatedX)).tickSize(0));
+
+            // Adjust the bars according to the zoomed scale
+            barsGroup.selectAll("g")
+                .attr("transform", d => `translate(${x(d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`)},0)`);
+        })
+        .on("end", function() {
+            svg.select("rect").style("pointer-events", "none");
+        }));
+
 }
 
 function createGraph(data, containerId, titleText, xLabel) {
     const svg = createSVG(containerId);
-
     const barsGroup = svg.append('g');
-
-    // Zoom handler
-    function zoomed() {
-        console.log("Zoomed function called");
-        const currentTransform = d3.event.transform;
-        barsGroup.attr("transform", currentTransform);
-    }
-    
-    const zoom = d3.zoom()
-        .scaleExtent([1, 5])
-        .translateExtent([[0, 0], [svgParams.width, svgParams.height]])
-        .on('zoom', zoomed);
-
-    svg.call(zoom);
-
-    createTitle(svg, titleText);
-
     const groups = data.map(d => d.name ? d.name : `${d.start_month} ${d.start_year} - ${d.end_month} ${d.end_year}`);
-
     const x = d3.scaleBand()
         .domain(groups)
         .range([0, svgParams.width - svgParams.margin.left - svgParams.margin.right])
         .padding([0.2]);
-
     const hasTotalEmissions = data.some(d => d.total_emissions !== undefined);
-    const subgroups = hasTotalEmissions ? ['co2_solar', 'other_emissions', 'total_emissions'] : ['co2_solar', 'other_emissions'];    
-
+    const subgroups = hasTotalEmissions ? ['co2_solar', 'other_emissions', 'total_emissions'] : ['co2_solar', 'other_emissions'];
     const y = d3.scaleLinear()
         .domain([0, d3.max(data, d => {
             const values = [d.co2_solar, d.other_emissions];
@@ -160,31 +170,31 @@ function createGraph(data, containerId, titleText, xLabel) {
         .domain(subgroups)
         .range([0, x.bandwidth()])
         .padding([0.05]);
+    
+    const xAxisGroup = svg.append("g")
+        .attr("transform", `translate(0,${svgParams.height - svgParams.margin.top - svgParams.margin.bottom})`);
 
-    setupBars(barsGroup, x, y, xSubgroup, data);
+    const yAxisGroup = svg.append("g");
+    createTitle(svg, titleText);
 
-    // X-axis
-    svg.append("g")
-        .attr("transform", `translate(0,${svgParams.height - svgParams.margin.top - svgParams.margin.bottom})`)
-        .call(d3.axisBottom(x).tickSize(0))
+
+    setupBars(barsGroup, x, y, xSubgroup, data, svg, xAxisGroup, yAxisGroup, groups);
+
+    xAxisGroup.call(d3.axisBottom(x).tickSize(0))
         .selectAll("text")
         .style("text-anchor", "end")
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(-65)");
 
-    // X-axis label
     svg.append("text")
         .attr("x", svgParams.width / 2)
         .attr("y", svgParams.height - svgParams.margin.top + 40)
         .style("text-anchor", "middle")
         .text(xLabel);
 
-    // Y-axis
-    svg.append("g")
-        .call(d3.axisLeft(y));
+    yAxisGroup.call(d3.axisLeft(y));
 
-    // Y-axis label
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", -svgParams.margin.left + 10)
@@ -198,6 +208,13 @@ function createGraph(data, containerId, titleText, xLabel) {
     createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
 
     applyFontStyles(svg);
+
+    svg.append("rect")
+        .attr("width", svgParams.width)
+        .attr("height", svgParams.height)
+        .style("fill", "none")
+        .style("pointer-events", "none");
+
 }
 
 function monthToNumber(monthString) {
