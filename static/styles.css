@@ -503,3 +503,29 @@ td:hover .display {
     border-radius: 8px;
     pointer-events: none;
 }
+
+/* Maintain global-btn styling but override with specific colours */
+.global-btn.add-reporting, .global-btn.add-business {
+    background-color: #4CAF50; /* Green indicating 'add' */
+    color: #fff; /* White text for contrast */
+}
+
+.global-btn.remove-reporting {
+    background-color: #f44336; /* Red indicating 'remove' */
+    color: #fff; /* White text for contrast */
+}
+
+.global-btn.download-excel {
+    background-color: #217346; /* A green similar to Excel's logo */
+    color: #fff; /* White text for contrast */
+}
+
+.global-btn.download-word {
+    background-color: #2B579A; /* A blue similar to Word's logo */
+    color: #fff; /* White text for contrast */
+}
+
+/* Add hover effects to maintain usability */
+.global-btn:hover {
+    opacity: 0.8;
+}

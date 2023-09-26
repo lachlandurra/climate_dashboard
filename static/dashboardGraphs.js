@@ -478,7 +478,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
         tooltip.transition()
             .duration(200)
             .style("opacity", .9);
-        tooltip.html("Cost Savings: " + d.cost_savings)
+        tooltip.html("Cost Savings: $" + d.cost_savings)
             .style("left", (event.pageX) + "px")
             .style("top", (event.pageY - 28) + "px");
     })
