@@ -701,15 +701,16 @@ document.addEventListener('DOMContentLoaded', function() {
     .style("opacity", 0);
 });
 
-function svgToPng(svgElement) {
+function svgToPng(svgElement, scale = 2) {  // scale is 2x by default
     return new Promise((resolve) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const width = parseInt(svgElement.getAttribute("width") || svgElement.viewBox.baseVal.width);
         const height = parseInt(svgElement.getAttribute("height") || svgElement.viewBox.baseVal.height);
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        ctx.scale(scale, scale);
 
         const data = (new XMLSerializer()).serializeToString(svgElement);
         const svg = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
