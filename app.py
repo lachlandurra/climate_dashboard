@@ -46,6 +46,21 @@ def create_app():
             'end_month': period.end_month,
             'end_year': period.end_year
         } for period in periods])
+    
+    @app.route('/api/emissions_over_time', methods=['GET'])
+    def get_emissions_over_time():
+        periods = ReportingPeriod.query.all()
+        data = []
+        for period in periods:
+            solar_emissions = sum([report.co2_emissions_solar for report in period.reports])
+            other_emissions = sum([report.other_emissions for report in period.reports])
+            data.append({
+                "end_month": period.end_month, 
+                "end_year": period.end_year,   
+                "solar_emissions": solar_emissions,
+                "other_emissions": other_emissions
+            })
+        return jsonify(data)
 
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
     def remove_reporting_period():
@@ -63,8 +78,6 @@ def create_app():
         # If GET request, display the page with all reporting periods
         periods = ReportingPeriod.query.all()
         return render_template('remove_reporting_period.html', periods=periods)
-
-
 
     @app.route('/view_reports', methods=['GET', 'POST'])
     def view_reports():
@@ -367,9 +380,6 @@ def create_app():
                 'cost_savings': cost_savings
             })
         return jsonify(data)
-
-    @app.route('/logout')
-    def logout():
         logout_user()
         return redirect(url_for('index'))
     

@@ -19,8 +19,6 @@ function createSVG(containerId) {
     return svg;
 }
 
-
-
 function createTitle(svg, title) {
     svg.append("text")
         .attr("x", svgParams.width / 2 - 40)
@@ -119,7 +117,6 @@ function setupBars(barsGroup, x, y, xSubgroup, data) {
             });    
 }
 
-
 function createGraph(data, containerId, titleText, xLabel) {
     const svg = createSVG(containerId);
 
@@ -200,6 +197,182 @@ function createGraph(data, containerId, titleText, xLabel) {
 
     createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, subgroups);
 
+    applyFontStyles(svg);
+}
+
+function monthToNumber(monthString) {
+    const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+    return months.indexOf(monthString);
+}
+
+
+function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) {
+    const svg = createSVG(containerId);
+    const linesGroup = svg.append('g');
+
+    function zoomed() {
+        const currentTransform = d3.event.transform;
+        linesGroup.attr("transform", currentTransform);
+    }
+
+    function splitMultilineText(selection, delimiter) {
+        selection.each(function() {
+            const text = d3.select(this),
+                parts = text.text().split(delimiter),
+                y = text.attr("y"),
+                dy = parseFloat(text.attr("dy") || 0) + 5;
+    
+            text.text(parts[0])
+                .attr("y", y)
+                .attr("dy", dy);
+    
+            for (let i = 1; i < parts.length; i++) {
+                text.append("tspan")
+                    .text(parts[i])
+                    .attr("x", 0)
+                    .attr("y", y)
+                    .attr("dy", `${i + 1.1}em`);  // Adjust this value if needed for vertical spacing
+            }
+        });
+    }
+    
+    
+    const zoom = d3.zoom()
+        .scaleExtent([1, 5])
+        .translateExtent([[0, 0], [svgParams.width, svgParams.height]])
+        .on('zoom', zoomed);
+
+    svg.call(zoom);
+
+    createTitle(svg, titleText);
+
+    const x = d3.scaleTime()
+        .domain(d3.extent(data, d => new Date(d.end_year, monthToNumber(d.end_month))))
+        .range([0, svgParams.width - svgParams.margin.left - svgParams.margin.right]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => Math.max(d.solar_emissions, d.other_emissions))])
+        .range([svgParams.height - svgParams.margin.top - svgParams.margin.bottom, 0]);
+
+    const multiLineFormat = (date) => {
+        const month = d3.timeFormat("%B")(date);
+        const year = d3.timeFormat("%Y")(date);
+        return `${month} | ${year}`;
+    };
+        
+    
+    const xAxis = d3.axisBottom(x).tickFormat(multiLineFormat);
+    svg.append("g")
+        .attr("transform", `translate(0,${svgParams.height - svgParams.margin.top - svgParams.margin.bottom})`)
+        .call(xAxis);    
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    const solarLine = d3.line()
+        .x(d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .y(d => y(d.solar_emissions));
+
+    const otherLine = d3.line()
+        .x(d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .y(d => y(d.other_emissions));
+
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .style("padding", "5px")
+        .style("background-color", "white")
+        .style("border", "1px solid #ccc")
+        .style("border-radius", "4px");
+
+    svg.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", svgParams.color('co2_solar'))
+        .attr("stroke-width", 1.5)
+        .attr("d", solarLine);
+
+    svg.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", svgParams.color('other_emissions'))
+        .attr("stroke-width", 1.5)
+        .attr("d", otherLine);
+
+    svg.selectAll(".tick text")  // select all tick labels
+        .call(splitMultilineText, "|");  // call function to split multiline text
+    
+
+    // Add dots for solar_emissions
+    svg.selectAll(".dot-solar")
+        .data(data)
+        .enter().append("circle") // Append circle elements
+        .attr("class", "dot-solar")
+        .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .attr("cy", d => y(d.solar_emissions))
+        .attr("r", 3) // Radius of circle
+        .attr("fill", svgParams.color('co2_solar'))
+
+        .on("mouseover", function(d) {
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions}`)
+                .style("left", (d3.event.pageX + 5) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+
+    // Add dots for other_emissions
+    svg.selectAll(".dot-other")
+        .data(data)
+        .enter().append("circle") // Append circle elements
+        .attr("class", "dot-other")
+        .attr("cx", d => x(new Date(d.end_year, monthToNumber(d.end_month))))
+        .attr("cy", d => y(d.other_emissions))
+        .attr("r", 3) // Radius of circle
+        .attr("fill", svgParams.color('other_emissions'))
+
+        .on("mouseover", function(d) {
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Other Emissions: ${d.other_emissions}`)
+                .style("left", (d3.event.pageX + 5) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+
+
+    svg.append("text")
+        .attr("x", svgParams.width / 2)
+        .attr("y", svgParams.height - svgParams.margin.top + 40)
+        .style("text-anchor", "middle")
+        .text(xLabel);
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -svgParams.margin.left + 10)
+        .attr("x", -(svgParams.height - svgParams.margin.top - svgParams.margin.bottom) / 2)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("fill", "black")
+        .style("font-size", "14px")
+        .text("Emissions");
+
+    createLegend(svg, svgParams.width - svgParams.margin.left - svgParams.margin.right, ['co2_solar', 'other_emissions']);
     applyFontStyles(svg);
 }
 
@@ -438,6 +611,10 @@ function createBottom5CostSavingsGraph(data) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/emissions_over_time')
+    .then(response => response.json())
+    .then(data => createEmissionsOverTimeLineGraph(data, "#emissionsOverTime", "Emissions Over Time", "Time"));
+
     fetch('/api/emissions_by_reporting_period')
         .then(response => response.json())
         .then(data => createEmissionsByReportingPeriodGraph(data));

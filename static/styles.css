@@ -493,9 +493,10 @@ td:hover .display {
 .tooltip {
     position: absolute;
     text-align: center;
-    width: 120px;
-    height: 28px;
-    padding: 2px;
+    width: auto;
+    max-width: 200px; /* Or some value that works for you */
+    height: auto;
+    padding: 5px;
     font: 12px sans-serif;
     background: lightsteelblue;
     border: 0px;
