@@ -97,7 +97,7 @@ function setupBars(barsGroup, x, y, xSubgroup, data, svg, xAxisGroup, yAxisGroup
             
             const tooltipWidth = 200;  // estimate or dynamically calculate
             const leftPosition = event.pageX + 10 + tooltipWidth > window.innerWidth ? event.pageX - tooltipWidth - 10 : event.pageX + 10;
-            tooltip.html(getFriendlyLabel(d.key) + "<br>" + d.value)
+            tooltip.html(getFriendlyLabel(d.key) + "<br>" + d.value.toLocaleString() + " tCo2e")
                 .style("left", leftPosition + "px")
                 .style("top", (event.pageY - 28) + "px");
         })
@@ -270,10 +270,11 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
         .range([svgParams.height - svgParams.margin.top - svgParams.margin.bottom, 0]);
 
     const multiLineFormat = (date) => {
-        const month = d3.timeFormat("%B")(date);
+        const month = d3.timeFormat("%b")(date);  // This gives the abbreviated month format
         const year = d3.timeFormat("%Y")(date);
         return `${month} | ${year}`;
     };
+        
         
     
     const xAxis = d3.axisBottom(x).tickFormat(multiLineFormat);
@@ -341,7 +342,7 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
-            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions} tCo2e`)
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.solar_emissions.toLocaleString()} tCo2e`)
                 .style("left", (event.pageX + 5) + "px")
                 .style("top", (event.pageY - 28) + "px");
         })
@@ -375,7 +376,7 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
-            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.other_emissions} tCo2e`)
+            tooltip.html(`Date: ${d.end_month} ${d.end_year}<br/>Solar Emissions: ${d.other_emissions.toLocaleString()} tCo2e`)
                 .style("left", (event.pageX + 5) + "px")
                 .style("top", (event.pageY - 28) + "px");
         })
@@ -478,7 +479,7 @@ function createCostSavingsGraph(data, containerId, titleText) {
         tooltip.transition()
             .duration(200)
             .style("opacity", .9);
-        tooltip.html("Cost Savings: $" + d.cost_savings)
+        tooltip.html("Cost Savings: $" + d.cost_savings.toLocaleString())
             .style("left", (event.pageX) + "px")
             .style("top", (event.pageY - 28) + "px");
     })
@@ -533,34 +534,10 @@ function handleBarHover(svg, tooltip) {
             .duration(200)
             .style("opacity", .9);
         tooltip.html(`
-            <strong>${d.key}</strong>: ${d.value}
+            <strong>${d.key}</strong>: ${d.value.toLocaleString()} tCo2e
         `)
         .style("left", (event.pageX) + "px")
         .style("top", (event.pageY - 28) + "px");
-        
-        // Add horizontal line at the height of hovered bar
-        const y = yScale(d.value);
-        svg.append('line')
-            .attr('id', 'limit')
-            .attr('x1', 0)
-            .attr('y1', y)
-            .attr('x2', width)
-            .attr('y2', y);
-        
-        // Add divergence text above each bar
-        bars.append('text')
-            .attr('class', 'divergence')
-            .attr('x', d => xScale(d.key) + xScale.bandwidth() / 2)
-            .attr('y', d => yScale(d.value) + 30)
-            .attr('fill', 'white')
-            .attr('text-anchor', 'middle')
-            .text((d, idx) => {
-                const divergence = (d.value - data[idx].value).toFixed(1);
-                let text = '';
-                if (divergence > 0) text += '+';
-                text += `${divergence}%`;
-                return d !== data[idx] ? text : '';
-            });
     })
     .on("mouseleave", function(d) {
         // Return the bar to its original state
@@ -575,10 +552,6 @@ function handleBarHover(svg, tooltip) {
         tooltip.transition()
             .duration(500)
             .style("opacity", 0);
-
-        // Remove the horizontal line and divergence text
-        svg.selectAll('#limit').remove();
-        svg.selectAll('.divergence').remove();
     });
 }
 
@@ -601,8 +574,21 @@ function sortDataChronologically(data) {
 
 function createEmissionsByReportingPeriodGraph(data) {
     const sortedData = sortDataChronologically(data);
-    createGraph(sortedData, "#emissionsByPeriod", "Emissions by Reporting Period", "Reporting Period");
+
+    // Abbreviate the month names
+    const abbreviatedData = sortedData.map(d => {
+        const startMonthAbbreviated = d.start_month ? d.start_month.slice(0, 3) : '';
+        const endMonthAbbreviated = d.end_month ? d.end_month.slice(0, 3) : '';
+        return {
+            ...d,
+            start_month: startMonthAbbreviated,
+            end_month: endMonthAbbreviated
+        };
+    });
+
+    createGraph(abbreviatedData, "#emissionsByPeriod", "Emissions by Reporting Period", "Reporting Period");
 }
+
 
 function createEmissionsByCouncilAndBusinessGraph(data) {
     const aggregatedData = data.reduce((acc, report) => {

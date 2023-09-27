@@ -29,20 +29,6 @@ def create_app():
     def index():
         return render_template('index.html')
 
-    @app.route('/create_reporting_period', methods=['GET', 'POST'])
-    def create_reporting_period():
-        # this creates a new reporting period, where the user can enter the start and end month and year
-        if request.method == 'POST':
-            start_month = request.form['start_month']
-            start_year = request.form['start_year']
-            end_month = request.form['end_month']
-            end_year = request.form['end_year']
-            reporting_period = ReportingPeriod(start_month=start_month, start_year=start_year, end_month=end_month, end_year=end_year)
-            db.session.add(reporting_period)
-            db.session.commit()
-            return redirect(url_for('index'))
-        return render_template('create_reporting_period.html')
-
     @app.route('/api/all_reporting_periods', methods=['GET'])
     def all_reporting_periods():
         periods = ReportingPeriod.query.all()
@@ -69,6 +55,20 @@ def create_app():
             })
         return jsonify(data)
 
+    @app.route('/create_reporting_period', methods=['GET', 'POST'])
+    def create_reporting_period():
+        # this creates a new reporting period, where the user can enter the start and end month and year
+        if request.method == 'POST':
+            start_month = request.form['start_month']
+            start_year = request.form['start_year']
+            end_month = request.form['end_month']
+            end_year = request.form['end_year']
+            reporting_period = ReportingPeriod(start_month=start_month, start_year=start_year, end_month=end_month, end_year=end_year)
+            db.session.add(reporting_period)
+            db.session.commit()
+            return redirect(url_for('index'))
+        return render_template('create_reporting_period.html')
+
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
     def remove_reporting_period():
         if request.method == 'POST':
@@ -85,6 +85,34 @@ def create_app():
         # If GET request, display the page with all reporting periods
         periods = ReportingPeriod.query.all()
         return render_template('remove_reporting_period.html', periods=periods)
+    
+    def get_reporting_period_by_id(period_id):
+        return ReportingPeriod.query.get(period_id)
+
+    @app.route('/modify_reporting_period', methods=['GET', 'POST'])
+    def modify_reporting_period():
+        if request.method == 'POST':
+            period_id = request.form['reporting_period']
+            start_month = request.form['start_month']
+            start_year = request.form['start_year']
+            end_month = request.form['end_month']
+            end_year = request.form['end_year']
+            
+            reporting_period = get_reporting_period_by_id(period_id)
+            reporting_period.start_month = start_month
+            reporting_period.start_year = start_year
+            reporting_period.end_month = end_month
+            reporting_period.end_year = end_year
+
+            db.session.commit()
+            return redirect(url_for('index'))
+        all_periods = get_all_reporting_periods()
+        return render_template('modify_reporting_period.html', all_periods=all_periods)
+    
+    def get_all_reporting_periods():
+        """Fetches all reporting periods from the database, sorted by start year and month."""
+        return ReportingPeriod.query.order_by(ReportingPeriod.start_year, ReportingPeriod.start_month).all()
+
 
     @app.route('/view_reports', methods=['GET', 'POST'])
     def view_reports():
