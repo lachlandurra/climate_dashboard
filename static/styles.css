@@ -14,7 +14,7 @@ body {
 
 .login-container {
     background: #fff;
-    width: 500px;
+    width: 650px;
     margin: 65px auto;
     padding: 35px;
     border-radius: 4px;
@@ -22,7 +22,7 @@ body {
 }
 
 .login-container h2 {
-    font-weight: 300;
+    color: #3498db;
     text-align: center;
     margin-bottom: 25px;
 }
@@ -35,7 +35,6 @@ body {
     display: block;
     margin-bottom: 8px;
     text-transform: uppercase;
-    font-weight: 500;
 }
 
 /* Ensuring consistent styling for inputs and dropdowns */
@@ -93,20 +92,20 @@ body {
     letter-spacing: 0.2px;
     text-transform: uppercase;
 }
-
 .header h1 {
-    font-size: 24px;
+    font-size: 20px;
     margin-left: 10px;
+    margin-top: 5px;
 }
 
 .header {
-    background: #2d4660;
+    background: #0f3063;
     align-items: center;
     color: #ecf0f1;
-    padding: 10px 0;
+    padding: 7px 0;
     margin: 0; 
     justify-content: space-between;
-    border-bottom: 4px solid #323042;
+    border-bottom: 4px solid #f7a30a;
 }
 
 .header nav a {
@@ -118,16 +117,18 @@ body {
     margin: 0 5px; 
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
-    font-size: 18px;
+    font-size: 15px;
+    border-bottom: 4px solid transparent;
+    transition: border-color 0.3s ease;  /* Smooth transition effect */
 }
 
 .header nav a:hover {
-    color: #000000;
+    border-bottom: 4px solid #418fde;
 }
 
 .header nav a:focus {
     outline: none;
-    border-bottom: 2px solid #808080;
+    border-bottom: 3px solid #808080;
 }
 
 .header h1 {
@@ -140,27 +141,12 @@ a {
     transition: background-color 0.3s, color 0.3s;
 }
 
-nav.fill a {
-  transition: all 1s;
-}
-
 nav.fill a:after {
   text-align: left;
   content: '';
   margin: 0;
   opacity: 0;
   color: #000;
-}
-
-nav.fill a:hover {
-  color: #000;
-}
-
-nav.fill a:hover:after {
-  animation: fill 1s forwards;
-  -webkit-animation: fill 0.3s forwards;
-  -moz-animation: fill 0.3s forwards;
-  opacity: 1;
 }
 
 .task-container table {
