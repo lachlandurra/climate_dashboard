@@ -238,6 +238,9 @@ function createEmissionsOverTimeLineGraph(data, containerId, titleText, xLabel) 
     const svg = createSVG(containerId);
     const linesGroup = svg.append('g');
 
+    // Sort the data by date
+    data.sort((a, b) => new Date(a.end_year, monthToNumber(a.end_month)) - new Date(b.end_year, monthToNumber(b.end_month)));
+
     function splitMultilineText(selection, delimiter) {
         selection.each(function() {
             const text = d3.select(this),
