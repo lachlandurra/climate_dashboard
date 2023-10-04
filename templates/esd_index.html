@@ -3,7 +3,40 @@
 {% block content %}
 <div class="home-container">
     <div class="welcome-text">
-        Not yet implemented
+        Welcome to the Low Carbon Living Data Dashboard!
     </div>
-    
+    <div class="backlogs">
+
+        <div class="backlog-container">
+            <h2>CSIRO Energy Rating Data Entry</h2>
+            <a href="{{ url_for('enter_energy_rating_data') }}" class="global-btn">Enter Data</a>
+        </div>
+
+        <div class="backlog-container">
+            <h2>View and Modify Data</h2>
+            <a href="{{ url_for('view_energy_rating_data') }}" class="global-btn">View Data</a>
+        </div>
+
+    </div>
+    <div class="backlogs">
+
+        <div class="backlog-container">
+            <h2>Enter Emissions Factors Data</h2>
+            <a href="{{ url_for('enter_emission_factors_data') }}" class="global-btn">Enter Emissions Factors</a>
+        </div>
+
+        <div class="backlog-container">
+            <h2>Download Reports</h2>
+            <a href="{{ url_for('download_excel') }}" class="global-btn download-excel">Download Data - Excel</a>
+            <a href="#" onclick="downloadImagesAsWord()" class="global-btn download-word">Download Images - Word</a>
+        </div>
+    </div>
+        <!-- Emissions By Period div -->
+        <div class="backlog-container">
+            <h2>General Emissions Graphs</h2>
+        </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='dashboardGraphs.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+    <h2>Enter Emission Factors Data</h2>
+    <form method="post">
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" required>
+
+        <label for="factor">Emissions Factor (kg CO2-e / kWh):</label>
+        <input type="number" id="factor" name="factor" step="0.01" required>
+
+        <button class="btn" type="submit">Enter Data</button>
+    </form>
+</div>
+{% endblock %}

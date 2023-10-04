@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="backlog-container">
+    <h2>Energy Rating Data</h2>
+    <a href="{{ url_for('enter_energy_rating_data') }}" class="global-btn">Enter Data</a>
+    <table class="task-container">
+        <!-- The headers of the table -->
+        <thead>
+            <tr>
+                <th>Delete</th>
+                <th>Year</th>
+                <th>Half of Year</th>
+                <th>Class</th>
+                <th>Average Star Rating</th>
+                <th>Average Conditioned Area (m2)</th>
+                <th>MJ Saved Per Annum</th>
+                <th>Emissions Reduction (tonnes CO2e)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in energy_data %}
+            <tr>
+                <td><span class="delete-data" data-data-id="{{ data.id }}"><i class="fas fa-trash"></i></span></td>
+                <td contenteditable="true" data-type="year" data-data-id="{{ data.id }}">{{ data.year }}</td>
+                <td>
+                    <select data-type="half_year" data-data-id="{{ data.id }}" class="editable-select">
+                        <option value="1" {% if data.half_year == 1 %}selected{% endif %}>1</option>
+                        <option value="2" {% if data.half_year == 2 %}selected{% endif %}>2</option>
+                    </select>
+                </td>
+                <td>
+                    <select data-type="class" data-data-id="{{ data.id }}" class="editable-select">
+                        <option value="1" {% if data.class_ == 1 %}selected{% endif %}>1</option>
+                        <option value="2" {% if data.class_ == 2 %}selected{% endif %}>2</option>
+                    </select>
+                </td>
+                <td contenteditable="true" data-type="star_rating" data-data-id="{{ data.id }}">{{ data.star_rating }}</td>
+                <td contenteditable="true" data-type="avg_conditioned_area" data-data-id="{{ data.id }}">{{ data.avg_conditioned_area }}</td>
+                <td>{{ '{:,.2f}'.format(data.mj_saved_per_annum) }}</td>
+                <td>{{ '{:,.2f}'.format(data.emissions_reduction) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $(document).ready(function() {
+        $(".delete-data").click(function() {
+            var dataId = $(this).data('data-id');
+            
+            if(confirm("Are you sure you want to delete this data?")) {
+                $.ajax({
+                    type: "POST",
+                    url: "/delete_energy_data/" + dataId,
+                    success: function(response) {
+                        if(response.status === 'success') {
+                            location.reload();  // Refresh the page to reflect changes
+                        } else {
+                            alert("Error deleting data: " + response.message);
+                        }
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+
+{% endblock %}

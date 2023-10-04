@@ -23,7 +23,52 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from models import User, ReportingPeriod, EmissionReport, BusinessOrFacility
+    from models import User, ReportingPeriod, EmissionReport, BusinessOrFacility, EnergyRatingData, EmissionFactor
+
+    
+    STAR_RATING_MJ_SQ_M_REDUCTION = {
+        6.0: 0,
+        6.1: 1.3,
+        6.2: 3.9,
+        6.3: 6.5,
+        6.4: 9.1,
+        6.5: 13.0,
+        6.6: 14.4,
+        6.7: 17.2,
+        6.8: 20.0,
+        6.9: 22.8,
+        7.0: 27.0,
+        7.1: 28.3,
+        7.2: 30.9,
+        7.3: 33.5,
+        7.4: 36.1,
+        7.5: 40.0,
+        7.6: 41.3,
+        7.7: 43.9,
+        7.8: 46.5,
+        7.9: 49.1,
+        8.0: 53.0,
+        8.1: 54.2,
+        8.2: 56.6,
+        8.3: 59.0,
+        8.4: 61.4,
+        8.5: 65.0,
+        8.6: 66.3,
+        8.7: 68.9,
+        8.8: 71.5,
+        8.9: 74.1,
+        9.0: 78.0,
+        9.1: 79.1,
+        9.2: 81.3,
+        9.3: 83.5,
+        9.4: 85.7,
+        9.5: 89.0,
+        9.6: 90.0,
+        9.7: 92.0,
+        9.8: 94.0,
+        9.9: 96.0,
+        10.0: 99.0
+    } 
 
     @app.route('/')
     def index():
@@ -489,6 +534,130 @@ def create_app():
 
         return send_file(bytes_io, download_name="graphs.docx", as_attachment=True)
     
+    @app.route('/enter_energy_rating_data', methods=['GET', 'POST'])
+    def enter_energy_rating_data():
+        if request.method == 'POST':
+            # process submitted form data
+            class_ = request.form['class']
+            year = request.form['year']
+            half_year = request.form['half_year']
+            star_rating = request.form['star_rating']
+            certificates_issued = request.form['certificates_issued']
+            avg_conditioned_area = request.form['avg_conditioned_area']
+
+            # Get the emission factor for the given year
+            emission_factor = EmissionFactor.query.filter_by(year=year).first()
+
+            if not emission_factor:
+                flash('Emission factor for the selected year not found', 'error')
+                return redirect(url_for('enter_energy_rating_data'))
+
+            # create new EnergyRatingData object with emission_factor_id
+            data = EnergyRatingData(
+                class_=class_,
+                year=year,
+                half_year=half_year,
+                star_rating=star_rating,
+                certificates_issued=certificates_issued,
+                avg_conditioned_area=avg_conditioned_area,
+                emission_factor_id=emission_factor.id  # Set the emission_factor_id here
+            )
+
+            db.session.add(data)
+            db.session.commit()
+            return redirect(url_for('view_energy_rating_data'))
+
+        return render_template('enter_energy_rating_data.html')
+    
+    @app.route('/enter_emission_factors_data', methods=['GET', 'POST'])
+    def enter_emission_factors_data():
+        if request.method == 'POST':
+            year = request.form['year']
+            factor = request.form['factor']
+
+            # Create new EmissionFactor object
+            emission_factor = EmissionFactor(year=year, factor=factor)
+
+            db.session.add(emission_factor)
+            db.session.commit()
+
+            return redirect(url_for('view_energy_rating_data'))
+
+        return render_template('enter_emission_factors_data.html')
+
+
+    @app.route('/view_energy_rating_data', methods=['GET', 'POST'])
+    def view_energy_rating_data():
+        energy_data = EnergyRatingData.query.all()
+
+        if request.method == 'POST':
+            # Implement your editing logic here, e.g., update the database records
+            data_id = request.form.get('data_id')
+            updated_value = request.form.get('updated_value')
+            # Perform DB update operation here
+            return jsonify(success=True)
+
+        return render_template('view_energy_rating_data.html', energy_data=energy_data)
+    
+    @app.route('/delete_energy_data/<int:data_id>', methods=['POST'])
+    def delete_energy_data(data_id):
+        try:
+            data = EnergyRatingData.query.get(data_id)
+            if data:
+                db.session.delete(data)
+                db.session.commit()
+                return jsonify(status='success')
+            else:
+                return jsonify(status='fail', message='Data not found')
+        except Exception as e:
+            return jsonify(status='fail', message=str(e))
+
+    @app.route('/update_data', methods=['POST'])
+    def update_data():
+        data_id = request.form.get('data_id')
+        column_name = request.form.get('column_name')
+        value = request.form.get('value')
+
+        data = EnergyRatingData.query.get(data_id)
+
+        if not data:
+            return jsonify(status="error", message="Data not found")
+
+        try:
+            if column_name == "year":
+                data.year = int(value)
+            elif column_name == "half_year":
+                data.half_year = int(value)
+            elif column_name == "class":
+                data.class_ = int(value)
+            elif column_name == "star_rating":
+                data.star_rating = float(value)
+            elif column_name == "avg_conditioned_area":
+                data.avg_conditioned_area = float(value)
+            elif column_name == "certificates_issued":
+                data.certificates_issued = int(value)
+            else:
+                return jsonify(status="error", message="Invalid column name")
+        except ValueError:
+            return jsonify(status="error", message="Invalid value format")
+
+        db.session.commit()
+
+        # Here the recalculations will occur automatically when you access these properties
+        mj_saved = data.mj_saved_per_annum
+        emissions_reduction = data.emissions_reduction
+
+        return jsonify(
+            status="success",
+            year=data.year,
+            half_year=data.half_year,
+            class_=data.class_,
+            star_rating=data.star_rating,
+            avg_conditioned_area=data.avg_conditioned_area,
+            mj_saved_per_annum='{:,.2f}'.format(data.mj_saved_per_annum),
+            emissions_reduction='{:,.2f}'.format(data.emissions_reduction)
+        )
+
     return app
 
 if __name__ == '__main__':
