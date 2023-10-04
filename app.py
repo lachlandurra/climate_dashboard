@@ -28,6 +28,18 @@ def create_app():
     @app.route('/')
     def index():
         return render_template('index.html')
+    
+    @app.route('/business_index')
+    def business_index():
+        return render_template('business_index.html')
+    
+    @app.route('/esd_index')
+    def esd_index():
+        return render_template('esd_index.html')
+    
+    @app.route('/ev_index')
+    def ev_index():
+        return render_template('ev_index.html')
 
     @app.route('/api/all_reporting_periods', methods=['GET'])
     def all_reporting_periods():
@@ -66,7 +78,7 @@ def create_app():
             reporting_period = ReportingPeriod(start_month=start_month, start_year=start_year, end_month=end_month, end_year=end_year)
             db.session.add(reporting_period)
             db.session.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('business_index'))
         return render_template('create_reporting_period.html')
 
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
@@ -78,7 +90,7 @@ def create_app():
             if period:
                 db.session.delete(period)
                 db.session.commit()
-                return redirect(url_for('index'))
+                return redirect(url_for('business_index'))
             else:
                 return "Error: Reporting Period Not Found", 400
 
@@ -105,7 +117,7 @@ def create_app():
             reporting_period.end_year = end_year
 
             db.session.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('business_index'))
         all_periods = get_all_reporting_periods()
         return render_template('modify_reporting_period.html', all_periods=all_periods)
     

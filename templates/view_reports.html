@@ -25,23 +25,49 @@
     </form>
 
     <!-- Table to display reports for the selected period -->
+    <div id="cover" class="cover"></div>
     <table class="task-container">
         <thead>
             <tr>
                 <th></th>
                 <th>Type 
-                    <br>(Council Facility / Local Business)</th>
-                <th>Name of Business / Facility</th>
+                    <br>(Council Facility / Local Business)
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(1, 'text')"></i>
+                    </div>
+                </th>
+                <th>Name of Business / Facility 
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(2, 'text')"></i>
+                    </div>
+                </th>
                 <th>Total GHG Savings
-                    <br>(tCo2e / yr)</th>
+                    <br>(tCo2e / yr)
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(3, 'number')"></i>
+                    </div>
+                </th>
                 <th>Solar PV GHG Savings 
-                    <br>(tCo2e / yr)</th>
+                    <br>(tCo2e / yr)
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(4, 'number')"></i>
+                    </div>
+                </th>
                 <th>Other GHG Savings 
-                    <br>(tCo2e / yr)</th>
+                    <br>(tCo2e / yr)
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(5, 'number')"></i>
+                    </div>
+                </th>
                 <th>Cost Savings 
-                    <br>($ / yr)</th>
+                    <br>($ / yr)
+                    <div class="sort-icon">
+                        <i class="fas fa-sort" onclick="sortTable(6, 'number')"></i>
+                    </div>
+                </th>
             </tr>
-        </thead>        
+        </thead>  
+                     
         <tbody>
             {% for report in reports %}
             <tr>
@@ -95,4 +121,85 @@
         </tbody>
     </table>
 </div>
+<script>
+    // Get the table headers and cover element
+    const headers = document.querySelector('.task-container th');
+    const cover = document.getElementById('cover');
+
+    // Listen for the scroll event
+    window.addEventListener('scroll', () => {
+        // Get the headers' distance from the top of the viewport
+        const headersTop = headers.getBoundingClientRect().top;
+
+        // If the headers are at the top of the viewport (or past it),
+        // show the cover. Otherwise, hide it.
+        if (headersTop <= 20) {
+            cover.style.display = 'block';
+        } else {
+            cover.style.display = 'none';
+        }
+    });
+</script>
+<script>
+    function sortTable(n, type) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.querySelector(".task-container");
+        switching = true;
+        dir = "asc"; 
+        
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            
+            for (i = 1; i < (rows.length - 5); i++) { // -5 to keep summary rows at the bottom
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                if(type === 'text') {
+                    var xVal = n === 1 ? x.getElementsByTagName('select')[0].value.toLowerCase() : x.innerHTML.toLowerCase();
+                    var yVal = n === 1 ? y.getElementsByTagName('select')[0].value.toLowerCase() : y.innerHTML.toLowerCase();
+
+                    if(dir == "asc") {
+                        if(xVal > yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if(dir == "desc") {
+                        if(xVal < yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                } else if(type === 'number') {
+                    var xVal = parseFloat(x.innerHTML.replace(/[$,]/g, '')); // remove $ and commas, and convert to number
+                    var yVal = parseFloat(y.innerHTML.replace(/[$,]/g, '')); 
+
+                    if(dir == "asc") {
+                        if(xVal > yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if(dir == "desc") {
+                        if(xVal < yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++; 
+            } else {
+                if(switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+</script>
 {% endblock %}
