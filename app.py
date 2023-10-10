@@ -8,6 +8,7 @@ from io import BytesIO
 from docx import Document
 import base64
 from docx.shared import Inches
+from sqlalchemy import asc
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -539,7 +540,7 @@ def create_app():
 
     @app.route('/view_energy_rating_data', methods=['GET', 'POST'])
     def view_energy_rating_data():
-        energy_data = EnergyRatingData.query.all()
+        energy_data = EnergyRatingData.query.order_by(asc(EnergyRatingData.year), asc(EnergyRatingData.half_year)).all()
 
         if request.method == 'POST':
             # Implement your editing logic here, e.g., update the database records
