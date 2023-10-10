@@ -118,4 +118,4 @@ class EnergyRatingData(db.Model):
     def emissions_reduction(self):
         if self.emission_factor:
             return self.mj_saved_per_annum * self.emission_factor.factor * 3.6 / 1000
-        return 0
+        return None

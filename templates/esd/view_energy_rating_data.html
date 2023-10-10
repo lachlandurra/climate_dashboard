@@ -38,7 +38,14 @@
                 <td contenteditable="true" data-type="star_rating" data-data-id="{{ data.id }}">{{ data.star_rating }}</td>
                 <td contenteditable="true" data-type="avg_conditioned_area" data-data-id="{{ data.id }}">{{ data.avg_conditioned_area }}</td>
                 <td class="mj-saved">{{ '{:,.2f}'.format(data.mj_saved_per_annum) }}</td>
-                <td class="emissions-reduction">{{ '{:,.2f}'.format(data.emissions_reduction) }}</td>                
+                <td class="emissions-reduction">
+                    {% if data.emissions_reduction != None %}
+                        {{ '{:,.2f}'.format(data.emissions_reduction) }}
+                    {% else %}
+                        
+                    {% endif %}
+                </td>
+                              
             </tr>
             {% endfor %}
         </tbody>

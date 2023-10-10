@@ -503,10 +503,6 @@ def create_app():
             # Get the emission factor for the given year
             emission_factor = EmissionFactor.query.filter_by(year=year).first()
 
-            if not emission_factor:
-                flash('Emission factor for the selected year not found', 'error')
-                return redirect(url_for('enter_energy_rating_data'))
-
             # create new EnergyRatingData object with emission_factor_id
             data = EnergyRatingData(
                 class_=class_,
@@ -515,7 +511,7 @@ def create_app():
                 star_rating=star_rating,
                 certificates_issued=certificates_issued,
                 avg_conditioned_area=avg_conditioned_area,
-                emission_factor_id=emission_factor.id  # Set the emission_factor_id here
+                emission_factor_id=emission_factor.id if emission_factor else None
             )
 
             db.session.add(data)
