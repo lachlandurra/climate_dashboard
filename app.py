@@ -25,66 +25,21 @@ def create_app():
 
     from models import User, ReportingPeriod, EmissionReport, BusinessOrFacility, EnergyRatingData, EmissionFactor
 
-    
-    STAR_RATING_MJ_SQ_M_REDUCTION = {
-        6.0: 0,
-        6.1: 1.3,
-        6.2: 3.9,
-        6.3: 6.5,
-        6.4: 9.1,
-        6.5: 13.0,
-        6.6: 14.4,
-        6.7: 17.2,
-        6.8: 20.0,
-        6.9: 22.8,
-        7.0: 27.0,
-        7.1: 28.3,
-        7.2: 30.9,
-        7.3: 33.5,
-        7.4: 36.1,
-        7.5: 40.0,
-        7.6: 41.3,
-        7.7: 43.9,
-        7.8: 46.5,
-        7.9: 49.1,
-        8.0: 53.0,
-        8.1: 54.2,
-        8.2: 56.6,
-        8.3: 59.0,
-        8.4: 61.4,
-        8.5: 65.0,
-        8.6: 66.3,
-        8.7: 68.9,
-        8.8: 71.5,
-        8.9: 74.1,
-        9.0: 78.0,
-        9.1: 79.1,
-        9.2: 81.3,
-        9.3: 83.5,
-        9.4: 85.7,
-        9.5: 89.0,
-        9.6: 90.0,
-        9.7: 92.0,
-        9.8: 94.0,
-        9.9: 96.0,
-        10.0: 99.0
-    } 
-
     @app.route('/')
     def index():
         return render_template('index.html')
     
     @app.route('/business_index')
     def business_index():
-        return render_template('business_index.html')
+        return render_template('business_and_industry/business_index.html')
     
     @app.route('/esd_index')
     def esd_index():
-        return render_template('esd_index.html')
+        return render_template('esd/esd_index.html')
     
     @app.route('/ev_index')
     def ev_index():
-        return render_template('ev_index.html')
+        return render_template('ev/ev_index.html')
 
     @app.route('/api/all_reporting_periods', methods=['GET'])
     def all_reporting_periods():
@@ -124,7 +79,7 @@ def create_app():
             db.session.add(reporting_period)
             db.session.commit()
             return redirect(url_for('business_index'))
-        return render_template('create_reporting_period.html')
+        return render_template('business_and_industry/create_reporting_period.html')
 
     @app.route('/remove_reporting_period', methods=['GET', 'POST'])
     def remove_reporting_period():
@@ -141,7 +96,7 @@ def create_app():
 
         # If GET request, display the page with all reporting periods
         periods = ReportingPeriod.query.all()
-        return render_template('remove_reporting_period.html', periods=periods)
+        return render_template('business_and_industry/remove_reporting_period.html', periods=periods)
     
     def get_reporting_period_by_id(period_id):
         return ReportingPeriod.query.get(period_id)
@@ -164,7 +119,7 @@ def create_app():
             db.session.commit()
             return redirect(url_for('business_index'))
         all_periods = get_all_reporting_periods()
-        return render_template('modify_reporting_period.html', all_periods=all_periods)
+        return render_template('business_and_industry/modify_reporting_period.html', all_periods=all_periods)
     
     def get_all_reporting_periods():
         """Fetches all reporting periods from the database, sorted by start year and month."""
@@ -176,7 +131,7 @@ def create_app():
         reporting_periods = ReportingPeriod.query.all()
 
         if not reporting_periods:  # Check if there are no reporting periods
-            return render_template('view_reports.html', reporting_periods=[], reports=[])
+            return render_template('business_and_industry/view_reports.html', reporting_periods=[], reports=[])
 
         if request.method == 'POST':
             reporting_period_id = request.form['reporting_period']
@@ -203,7 +158,7 @@ def create_app():
         lb_total_solar_savings = sum([report.co2_emissions_solar for report in reports if report.type.title() == "Local Business"])
         lb_total_cost_savings = sum([report.cost_savings for report in reports if report.type.title() == "Local Business"])
 
-        return render_template('view_reports.html', reporting_periods=reporting_periods, reports=reports, 
+        return render_template('business_and_industry/view_reports.html', reporting_periods=reporting_periods, reports=reports, 
                                 selected_period=reporting_period_id, total_ghg_savings=total_ghg_savings,
                                 total_solar_savings=total_solar_savings, total_cost_savings=total_cost_savings, 
                                 local_business_count=local_business_count, council_facility_count=council_facility_count,
@@ -276,7 +231,7 @@ def create_app():
                 if existing_biz:
                     error_msg = "This business or facility already exists!"
                     show_error_modal = True
-                    return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
+                    return render_template('business_and_industry/add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
                 else:
                     business_or_facility = BusinessOrFacility(name=name, type=type_)
                     db.session.add(business_or_facility)
@@ -301,7 +256,7 @@ def create_app():
                 db.session.commit()
                 return redirect(url_for('view_reports'))
 
-        return render_template('add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
+        return render_template('business_and_industry/add_business_report.html', businesses_or_facilities=businesses_or_facilities, reporting_periods=reporting_periods, show_error_modal=show_error_modal, error_msg=error_msg)
 
     @app.route('/api/emissions_by_reporting_period')
     def api_emissions_by_reporting_period():
@@ -567,7 +522,7 @@ def create_app():
             db.session.commit()
             return redirect(url_for('view_energy_rating_data'))
 
-        return render_template('enter_energy_rating_data.html')
+        return render_template('esd/enter_energy_rating_data.html')
     
     @app.route('/enter_emission_factors_data', methods=['GET', 'POST'])
     def enter_emission_factors_data():
@@ -583,7 +538,7 @@ def create_app():
 
             return redirect(url_for('view_energy_rating_data'))
 
-        return render_template('enter_emission_factors_data.html')
+        return render_template('esd/enter_emission_factors_data.html')
 
 
     @app.route('/view_energy_rating_data', methods=['GET', 'POST'])
@@ -597,7 +552,7 @@ def create_app():
             # Perform DB update operation here
             return jsonify(success=True)
 
-        return render_template('view_energy_rating_data.html', energy_data=energy_data)
+        return render_template('esd/view_energy_rating_data.html', energy_data=energy_data)
     
     @app.route('/delete_energy_data/<int:data_id>', methods=['POST'])
     def delete_energy_data(data_id):

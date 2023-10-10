@@ -116,7 +116,6 @@ class EnergyRatingData(db.Model):
 
     @property
     def emissions_reduction(self):
-        print(self.emission_factor)  # Add a print or log statement here
         if self.emission_factor:
             return self.mj_saved_per_annum * self.emission_factor.factor * 3.6 / 1000
         return 0
