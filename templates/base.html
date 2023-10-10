@@ -20,8 +20,9 @@
             <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('view_reports') }}">View Reports</a>
         </nav>
+        <!-- I WANT THE BACK BUTTON HERE -->
     </div>
-    <hr>
+    <!-- <hr> -->
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -30,8 +31,32 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    
-    {% block content %}{% endblock %}
 
 </body>
 </html>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var backButton = document.createElement('a');
+        backButton.innerHTML = '<i class="fas fa-arrow-left"></i> Back';
+        backButton.classList.add('back-button');
+
+        // Modify the href attribute based on the current endpoint
+        {% if request.endpoint == 'business_index' %}
+            backButton.href = '{{ url_for('index') }}';
+        {% elif request.endpoint in ['create_reporting_period', 'modify_reporting_period', 'remove_reporting_period', 'add_business_report', 'view_reports'] %}
+            backButton.href = '{{ url_for('business_index') }}';
+        {% elif request.endpoint == 'esd_index' %}
+            backButton.href = '{{ url_for('index') }}';
+        {% elif request.endpoint in ['enter_emission_factors_data', 'enter_energy_rating_data', 'view_energy_rating_data'] %}
+            backButton.href = '{{ url_for('esd_index') }}';
+        {% elif request.endpoint == 'ev_index' %}
+            backButton.href = '{{ url_for('index') }}';
+        {% endif %}
+
+        // Append the back button below the nav bar
+        document.querySelector('.header').after(backButton);
+        
+    });
+</script>
+
+{% block content %}{% endblock %}

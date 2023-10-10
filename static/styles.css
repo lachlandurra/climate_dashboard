@@ -110,7 +110,7 @@ select option {
     align-items: center;
     color: #ecf0f1;
     padding: 7px 0;
-    margin: 0; 
+    margin: 0;
     justify-content: space-between;
     border-bottom: 4px solid #f7a30a;
 }
@@ -663,4 +663,21 @@ th {
     color: red;
     cursor: pointer;
     font-size: 20px;
+}
+
+.back-button {
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 10px 0; 
+    position: relative; /* Adjust as needed */
+    left: 10px; /* Adjust as needed */
+}
+
+.back-button:hover {
+    background-color: #ddd;
+    cursor: pointer;
 }
