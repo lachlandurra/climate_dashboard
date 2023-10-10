@@ -658,3 +658,9 @@ th {
     color: #f9e6ff;
     border-color: #5a3d8e;
 }
+
+.delete-data i {
+    color: red;
+    cursor: pointer;
+    font-size: 20px;
+}
