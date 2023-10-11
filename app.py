@@ -191,7 +191,11 @@ def create_app():
 
         db.session.commit()
 
-        return jsonify(status="success")
+        # Print the other_emissions to the console for debugging
+        print('Other Emissions:', report.other_emissions)
+
+        return jsonify(status="success", other_emissions=report.other_emissions)
+
 
     @app.route('/delete_report/<int:report_id>', methods=['POST'])
     def delete_report(report_id):
@@ -592,6 +596,10 @@ def create_app():
                 return jsonify(status="error", message="Invalid column name")
         except ValueError:
             return jsonify(status="error", message="Invalid value format")
+        
+        print(data_id, column_name, value)
+        print(data.year, data.half_year, data.class_, data.star_rating, data.avg_conditioned_area)
+
 
         db.session.commit()
 
@@ -606,9 +614,10 @@ def create_app():
             class_=data.class_,
             star_rating=data.star_rating,
             avg_conditioned_area=data.avg_conditioned_area,
-            mj_saved_per_annum='{:,.2f}'.format(data.mj_saved_per_annum),
-            emissions_reduction='{:,.2f}'.format(data.emissions_reduction)
+            mj_saved_per_annum='{:,.2f}'.format(data.mj_saved_per_annum) if data.mj_saved_per_annum is not None else None,
+            emissions_reduction='{:,.2f}'.format(data.emissions_reduction) if data.emissions_reduction is not None else None
         )
+
 
     return app
 

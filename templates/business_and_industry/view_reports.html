@@ -81,7 +81,7 @@
                 <td>{{ report.business_or_facility.name }}</td>
                 <td contenteditable="true" data-type="total_emissions" data-report-id="{{ report.id }}">{{ '{:,.2f}'.format(report.total_emissions) }}</td>
                 <td contenteditable="true" data-type="co2_emissions_solar" data-report-id="{{ report.id }}">{{ '{:,.2f}'.format(report.co2_emissions_solar) }}</td>
-                <td>{{ '{:,.2f}'.format(report.total_emissions - report.co2_emissions_solar) }}</td>                
+                <td data-type="other_emissions">{{ '{:,.2f}'.format(report.other_emissions) }}</td>
                 <td contenteditable="true" data-type="cost_savings" data-report-id="{{ report.id }}">${{ '{:,.2f}'.format(report.cost_savings) }}</td>
             </tr>
             {% endfor %}
@@ -202,4 +202,5 @@
         }
     }
 </script>
+<script src="{{ url_for('static', filename='business_script.js') }}"></script>
 {% endblock %}
