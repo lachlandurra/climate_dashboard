@@ -110,7 +110,6 @@ class EnergyRatingData(db.Model):
     def mj_saved_per_annum(self):
         mj_reduction = STAR_RATING_MJ_SQ_M_REDUCTION.get(self.star_rating, 0)
         result = self.certificates_issued * self.avg_conditioned_area * mj_reduction
-        print(result)  # Add a print or log statement here
         return result
 
 

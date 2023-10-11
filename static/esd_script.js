@@ -37,9 +37,49 @@ $(document).ready(function() {
         updateValue($(this), newValue);
     });
 
-    // Handling dropdown changes for ESD script
-    $('.editable-select').on('change', function() {
+    $('.editable-select[data-type="half_year"]').change(function() {
+        var dataId = $(this).data('data-id');
         var newValue = $(this).val();
-        updateValue($(this), newValue);
+        console.log("Data ID Sent: ", dataId);
+        console.log('New Value:', newValue);  // Log the new value
+    
+        $.post("/update_data", {
+            data_id: dataId,
+            column_name: "half_year",
+            value: newValue
+        }).done(function(data) {
+            console.log('Response:', data);  // Log the entire response
+    
+            if (data.status === 'success') {
+                // Handle success
+            } else {
+                alert("Failed to update half of the year. " + data.message);
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('AJAX Error:', textStatus, errorThrown);  // Log AJAX errors
+        });
     });
+    
+    
+    // for Class
+    $('.editable-select[data-type="class"]').change(function() {
+        var dataId = $(this).data('data-id');
+        var newValue = $(this).val();
+        console.log("Data ID Sent: ", dataId);
+        console.log('New Value:', newValue);  // Log the new value
+    
+        $.post("/update_data", {
+            data_id: dataId,
+            column_name: "class",
+            value: newValue
+        }).done(function(data) {
+            if (data.status === 'success') {
+                // Again, you can update other cells here if needed
+            } else {
+                alert("Failed to update class. " + data.message);
+            }
+        });
+    });
+    
 });
+

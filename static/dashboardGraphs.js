@@ -592,7 +592,6 @@ function createEmissionsByReportingPeriodGraph(data) {
     createGraph(abbreviatedData, "#emissionsByPeriod", "Emissions by Reporting Period", "Reporting Period");
 }
 
-
 function createEmissionsByCouncilAndBusinessGraph(data) {
     const aggregatedData = data.reduce((acc, report) => {
         if (report.type === 'council facility') {

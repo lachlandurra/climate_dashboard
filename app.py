@@ -9,6 +9,7 @@ from docx import Document
 import base64
 from docx.shared import Inches
 from sqlalchemy import asc
+from collections import defaultdict
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -126,7 +127,6 @@ def create_app():
         """Fetches all reporting periods from the database, sorted by start year and month."""
         return ReportingPeriod.query.order_by(ReportingPeriod.start_year, ReportingPeriod.start_month).all()
 
-
     @app.route('/view_reports', methods=['GET', 'POST'])
     def view_reports():
         reporting_periods = ReportingPeriod.query.all()
@@ -191,11 +191,7 @@ def create_app():
 
         db.session.commit()
 
-        # Print the other_emissions to the console for debugging
-        print('Other Emissions:', report.other_emissions)
-
         return jsonify(status="success", other_emissions=report.other_emissions)
-
 
     @app.route('/delete_report/<int:report_id>', methods=['POST'])
     def delete_report(report_id):
@@ -541,7 +537,6 @@ def create_app():
 
         return render_template('esd/enter_emission_factors_data.html')
 
-
     @app.route('/view_energy_rating_data', methods=['GET', 'POST'])
     def view_energy_rating_data():
         energy_data = EnergyRatingData.query.order_by(asc(EnergyRatingData.year), asc(EnergyRatingData.half_year)).all()
@@ -571,10 +566,19 @@ def create_app():
     @app.route('/update_data', methods=['POST'])
     def update_data():
         data_id = request.form.get('data_id')
+        print("Data ID Retrieved:", data_id)
         column_name = request.form.get('column_name')
         value = request.form.get('value')
+        print(data_id)
 
-        data = EnergyRatingData.query.get(data_id)
+        if data_id is not None:
+            data_id = int(data_id)
+        else:
+            print("Data ID is None")  # Print a message if data_id is None
+            return jsonify(status="error", message="Data ID is None")
+
+        data = EnergyRatingData.query.get(data_id)  # Removed the int conversion here
+        print("Data Retrieved: ", data)
 
         if not data:
             return jsonify(status="error", message="Data not found")
@@ -596,16 +600,8 @@ def create_app():
                 return jsonify(status="error", message="Invalid column name")
         except ValueError:
             return jsonify(status="error", message="Invalid value format")
-        
-        print(data_id, column_name, value)
-        print(data.year, data.half_year, data.class_, data.star_rating, data.avg_conditioned_area)
-
 
         db.session.commit()
-
-        # Here the recalculations will occur automatically when you access these properties
-        mj_saved = data.mj_saved_per_annum
-        emissions_reduction = data.emissions_reduction
 
         return jsonify(
             status="success",
@@ -618,6 +614,37 @@ def create_app():
             emissions_reduction='{:,.2f}'.format(data.emissions_reduction) if data.emissions_reduction is not None else None
         )
 
+    @app.route('/api/mj_saved_per_annum_over_time', methods=['GET'])
+    def get_mj_saved_per_annum_over_time():
+        data = EnergyRatingData.query.all()
+
+        # Organizing data by year and class
+        organized_data = defaultdict(lambda: defaultdict(list))
+
+        for item in data:
+            year = item.year
+            class_ = item.class_
+            mj_saved = item.mj_saved_per_annum
+            half_year = item.half_year
+
+            if mj_saved is not None:  # Adding a check to ensure mj_saved is not None
+                organized_data[year][class_].append(mj_saved)
+
+        # Calculating the average MJ saved per annum for each class per year
+        results = []
+
+        for year, classes in organized_data.items():
+            for class_, mj_saved_list in classes.items():
+                avg_mj_saved = sum(mj_saved_list) / len(mj_saved_list) if mj_saved_list else 0
+
+                results.append({
+                    "year": year,
+                    "class": class_,
+                    "avg_mj_saved_per_annum": avg_mj_saved,
+                    "half_year": half_year
+                })
+
+        return jsonify(results)
 
     return app
 
