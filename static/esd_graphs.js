@@ -8,10 +8,11 @@ const svgParams = {
 // Create SVG container
 const svg = d3.select("#mjSavedOverTime")
     .append("svg")
-    .attr("width", svgParams.width)
-    .attr("height", svgParams.height)
+    .attr("width", '100%')
+    .attr("height", '100%')
+    .attr("viewBox", "-100 0 1200 400")  // Adjust the viewBox values here
     .append("g")
-    .attr("transform", `translate(${svgParams.margin.left},${svgParams.margin.top})`);
+    .attr("transform", "translate(150, 50)");
 
 // Create tooltip
 const tooltip = d3.select("body").append("div")
