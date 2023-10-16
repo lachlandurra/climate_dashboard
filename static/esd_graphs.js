@@ -44,19 +44,45 @@ async function fetchAndRenderGraph() {
         .data(data)
         .enter()
         .append('circle')
-        .attr('cx', d => x(d.year + (d.half_year - 1) * 0.5))  // Adjusted this line
+        .attr('cx', d => {
+            const xValue = x(d.year + (d.half_year - 1) * 0.5);  // Calculating x value
+            return xValue;
+        })
         .attr('cy', d => y(d.avg_mj_saved_per_annum))
         .attr('r', 5)
         .attr('fill', d => svgParams.color(d.class))
         .on('mouseover', (event, d) => {
             tooltip.transition().duration(200).style('opacity', .9);
-            tooltip.html(`Year: ${d.year}<br/>Class: ${d.class}<br/>MJ Saved: ${d.avg_mj_saved_per_annum}`)
+            tooltip.html(`Year: ${d.year}<br/>Class: ${d.class}<br/>MJ Saved: ${d.avg_mj_saved_per_annum.toFixed(1)}`)
                 .style('left', (event.pageX + 5) + 'px')
                 .style('top', (event.pageY - 28) + 'px');
         })
         .on('mouseout', d => {
             tooltip.transition().duration(500).style('opacity', 0);
         });
+
+    // Add hover circles
+    svg.selectAll('.hover-circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('class', 'hover-circle')
+        .attr('cx', d => x(d.year + (d.half_year - 1) * 0.5))
+        .attr('cy', d => y(d.avg_mj_saved_per_annum))
+        .attr('r', 12) // You can adjust the radius value as needed
+        .style('fill', 'none')
+        .style('pointer-events', 'all')
+        .on('mouseover', (event, d) => {
+            tooltip.transition().duration(200).style('opacity', .9);
+            tooltip.html(`Year: ${d.year}<br/>Class: ${d.class}<br/>MJ Saved: ${d.avg_mj_saved_per_annum.toFixed(1)}`)
+                .style('left', (event.pageX + 5) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', d => {
+            tooltip.transition().duration(500).style('opacity', 0);
+        });
+    
+    
 
     const line = d3.line()
         .x(d => x(d.year + (d.half_year - 1) * 0.5))

@@ -566,10 +566,8 @@ def create_app():
     @app.route('/update_data', methods=['POST'])
     def update_data():
         data_id = request.form.get('data_id')
-        print("Data ID Retrieved:", data_id)
         column_name = request.form.get('column_name')
         value = request.form.get('value')
-        print(data_id)
 
         if data_id is not None:
             data_id = int(data_id)
@@ -578,7 +576,6 @@ def create_app():
             return jsonify(status="error", message="Data ID is None")
 
         data = EnergyRatingData.query.get(data_id)  # Removed the int conversion here
-        print("Data Retrieved: ", data)
 
         if not data:
             return jsonify(status="error", message="Data not found")
@@ -618,31 +615,33 @@ def create_app():
     def get_mj_saved_per_annum_over_time():
         data = EnergyRatingData.query.all()
 
-        # Organizing data by year and class
-        organized_data = defaultdict(lambda: defaultdict(list))
+        # Nested defaultdict to support year, class, and half_year
+        organized_data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
         for item in data:
             year = item.year
             class_ = item.class_
             mj_saved = item.mj_saved_per_annum
-            half_year = item.half_year
+            half_year = item.half_year  # This should not be overwritten in each iteration
 
-            if mj_saved is not None:  # Adding a check to ensure mj_saved is not None
-                organized_data[year][class_].append(mj_saved)
+            if mj_saved is not None:
+                organized_data[year][class_][half_year].append(mj_saved)  # Store mj_saved by half_year as well
+
 
         # Calculating the average MJ saved per annum for each class per year
         results = []
 
         for year, classes in organized_data.items():
-            for class_, mj_saved_list in classes.items():
-                avg_mj_saved = sum(mj_saved_list) / len(mj_saved_list) if mj_saved_list else 0
+            for class_, half_years in classes.items():
+                for half_year, mj_saved_list in half_years.items():  # Process each half_year individually
+                    avg_mj_saved = sum(mj_saved_list) / len(mj_saved_list) if mj_saved_list else 0
 
-                results.append({
-                    "year": year,
-                    "class": class_,
-                    "avg_mj_saved_per_annum": avg_mj_saved,
-                    "half_year": half_year
-                })
+                    results.append({
+                        "year": year,
+                        "class": class_,
+                        "avg_mj_saved_per_annum": avg_mj_saved,
+                        "half_year": half_year  # This now corresponds to the correct half_year
+                    })
 
         return jsonify(results)
 
@@ -650,5 +649,7 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
+    app.run(debug=True)
     with app.app_context():
         db.create_all()
+    
