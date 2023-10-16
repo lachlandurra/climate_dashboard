@@ -1,7 +1,7 @@
 const svgParams = {
-    width: 800,
+    width: 1000,
     height: 400,
-    margin: {top: 50, right: 50, bottom: 50, left: 50},
+    margin: {top: 50, right: 120, bottom: 50, left: 120},
     color: d3.scaleOrdinal(d3.schemeCategory10)  // Adjust as needed
 };
 
@@ -116,14 +116,14 @@ async function fetchAndRenderGraph() {
         .attr('text-anchor', 'middle')
         .text('Year');
 
-    svg.append('text')
+        svg.append('text')
         .attr('transform', 'rotate(-90)')
-        .attr('y', -svgParams.margin.left)
+        .attr('y', -svgParams.margin.left + 40)  // Adjust this value to position the label correctly
         .attr('x', -(svgParams.height - svgParams.margin.top - svgParams.margin.bottom) / 2)
         .attr('dy', '1em')
         .attr('text-anchor', 'middle')
         .text('Average MJ Saved Per Annum');
-
+    
     // Legend
     const legend = svg.selectAll('.legend')
         .data([1, 2])
