@@ -12,6 +12,7 @@ from sqlalchemy import asc
 from collections import defaultdict
 import pandas as pd
 import os
+import shutil
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -44,10 +45,6 @@ def create_app():
     def esd_index():
         return render_template('esd/esd_index.html')
     
-    @app.route('/ev_index')
-    def ev_index():
-        return render_template('ev/ev_index.html')
-
     @app.route('/api/all_reporting_periods', methods=['GET'])
     def all_reporting_periods():
         periods = ReportingPeriod.query.all()
@@ -670,51 +667,85 @@ def create_app():
 
     @app.route('/upload_google_insights', methods=['POST'])
     def upload_google_insights():
-        # Check if the post request has the file part
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
-        
+
         file = request.files['file']
 
-        # If user does not select file, browser also
-        # submits an empty part without filename
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
 
         if file and allowed_file(file.filename):
-            filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            # Always save to the same file name to ensure only one file is saved
+            filename = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
             file.save(filename)
-            
-            # Process the file and create a summary
-            summary = process_google_insights_data(filename)
-            
-            # Redirect to the EV index page with the summary data
-            return render_template('ev/ev_index.html', google_insights_summary=summary)
+
+            return redirect(url_for('ev_index'))
 
         return redirect(url_for('ev_index'))
 
+    @app.route('/clear_google_insights', methods=['POST'])
+    def clear_google_insights():
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+        return redirect(url_for('ev_index'))
 
     def process_google_insights_data(filepath):
-        df = pd.read_csv(filepath)
+        try:
+            df = pd.read_csv(filepath)
+            print("statement 1")
+            print(df.head())
+
+            # Ensuring existence of required columns
+            required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
+            if not all(column in df.columns for column in required_columns):
+                return {}
+
+            # CO2 emissions each year, broken down by mode of transport
+            emissions_by_year_mode = df.groupby(['year', 'mode'])['full_co2e_tons'].sum().unstack().fillna(0)
+
+            # Average emissions per trip for each mode of transport
+            avg_emissions_per_trip = (df.groupby('mode')['full_co2e_tons'].sum() / df.groupby('mode')['trips'].sum()).fillna(0)
+
+            # Emissions data by travel bounds
+            emissions_by_bounds = df.groupby('travel_bounds')['full_co2e_tons'].sum()
+
+            # CO2 emissions per kilometer for each mode of transport
+            emissions_per_km = (df.groupby('mode')['full_co2e_tons'].sum() / df.groupby('mode')['full_distance_km'].sum()).fillna(0)
+
+            summary = {
+                'emissions_by_year_mode': emissions_by_year_mode.to_dict(),
+                'avg_emissions_per_trip': avg_emissions_per_trip.to_dict(),
+                'emissions_by_bounds': emissions_by_bounds.to_dict(),
+                'emissions_per_km': emissions_per_km.to_dict(),
+                'zero_emission_modes': df[df['full_co2e_tons'] == 0]['mode'].unique().tolist()  # Modes like cycling, walking contributing zero emissions
+            }
+
+            return summary
+        except Exception as e:
+            print("Error inside process_google_insights_data:", e)
+            return {}
+
+    @app.route('/ev_index')
+    def ev_index():
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
+
+        google_insights_summary = None
         
-        # Ensure these columns exist, and handle appropriately if they don't
-        total_trips = df['trips'].sum() if 'trips' in df else 0
-        total_distance = df['full_distance_km'].sum() if 'full_distance_km' in df else 0
-        total_co2e = df['full_co2e_tons'].sum() if 'full_co2e_tons' in df else 0
-        
-        yearly_summary = df.groupby('year')[['trips', 'full_distance_km', 'full_co2e_tons']].sum().to_dict('index') if 'year' in df else {}
+        if os.path.exists(filepath):
+            # If file exists, process the data and display the summary
+            try:
+                google_insights_summary = process_google_insights_data(filepath)
+            except Exception as e:
+                print("Error processing the data:", e)  # Print error to console for debugging
 
-        summary = {
-            'total_trips': total_trips,
-            'total_distance': total_distance,
-            'total_co2e': total_co2e,
-            'yearly_summary': yearly_summary
-        }
-
-        return summary
-
+        return render_template('ev/ev_index.html', google_insights_summary=google_insights_summary)
+    
 
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

@@ -18,42 +18,56 @@
         
             <!-- Data summary -->
             <div class="data-summary">
-                {% if google_insights_summary and 'yearly_summary' in google_insights_summary %}
+                {% if google_insights_summary %}
                 <h3>Data Summary</h3>
-        
-                <div class="chart-container">
-                    <!-- A chart can be inserted here to show emissions by mode, distance, year, etc. -->
-                    <p><strong>Chart:</strong> Emissions by Transport Mode and Year</p>
-                    <!-- Add a D3.js or Chart.js visualization here -->
-                </div>
-        
-                <div class="numeric-summary">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Year</th>
-                                <th>Total Trips</th>
-                                <th>Total Distance (km)</th>
-                                <th>Total CO2e Emissions (tons)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for year, summary in google_insights_summary['yearly_summary'].items() %}
-                            <tr>
-                                <td>{{ year }}</td>
-                                <td>{{ summary['trips'] }}</td>
-                                <td>{{ summary['full_distance_km']|float|round(2) }}</td>
-                                <td>{{ summary['full_co2e_tons']|float|round(2) }}</td>
-                            </tr>
-                            {% endfor %}                            
-                        </tbody>
-                    </table>
-                </div>
-        
+                
+                <h4>Emissions by Year and Mode of Transport</h4>
+                <ul>
+                    {% for year, modes in google_insights_summary.emissions_by_year_mode.items() %}
+                    <li>
+                        <strong>{{ year }}</strong>:
+                        {% for mode, emission in modes.items() %}
+                            {{ mode }}: {{ emission|float|round(2) }} tons,
+                        {% endfor %}
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <h4>Average Emissions per Trip by Mode of Transport</h4>
+                <ul>
+                    {% for mode, avg_emission in google_insights_summary.avg_emissions_per_trip.items() %}
+                    <li>{{ mode }}: {{ avg_emission|float|round(2) }} tons/trip</li>
+                    {% endfor %}
+                </ul>
+
+                <h4>Emissions by Travel Bounds</h4>
+                <ul>
+                    {% for bounds, emission in google_insights_summary.emissions_by_bounds.items() %}
+                    <li>{{ bounds }}: {{ emission|float|round(2) }} tons</li>
+                    {% endfor %}
+                </ul>
+
+                <h4>CO2 Emissions per Kilometer by Mode of Transport</h4>
+                <ul>
+                    {% for mode, emission_per_km in google_insights_summary.emissions_per_km.items() %}
+                    <li>{{ mode }}: {{ emission_per_km|float|round(2) }} tons/km</li>
+                    {% endfor %}
+                </ul>
+
+                <h4>Zero Emission Modes of Transport</h4>
+                <ul>
+                    {% for mode in google_insights_summary.zero_emission_modes %}
+                    <li>{{ mode }}</li>
+                    {% endfor %}
+                </ul>
+
                 {% else %}
                 <p>No data uploaded yet. Please upload the Google Insights Explorer data CSV file.</p>
                 {% endif %}
             </div>
+            <form action="{{ url_for('clear_google_insights') }}" method="POST">
+                <button type="submit" class="global-btn">Clear Data</button>
+            </form>            
         </div>        
         
         <div class="backlog-container backlog2">
