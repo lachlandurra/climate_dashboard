@@ -681,3 +681,7 @@ th {
     background-color: #ddd;
     cursor: pointer;
 }
+
+.highlighted {
+    background-color: yellow;
+}

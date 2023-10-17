@@ -60,6 +60,9 @@ async function fetchAndRenderGraph() {
         })
         .on('mouseout', d => {
             tooltip.transition().duration(500).style('opacity', 0);
+        })
+        .on('click', (event, d) => {
+            window.location.href = `/templates/esd/view_energy_rating_data.html?id=${d.id}`;
         });
 
     // Add hover circles
@@ -81,6 +84,9 @@ async function fetchAndRenderGraph() {
         })
         .on('mouseout', d => {
             tooltip.transition().duration(500).style('opacity', 0);
+        })
+        .on('click', (event, d) => {
+            window.location.href = `/view_energy_rating_data/${d.id}`;
         });
     
     

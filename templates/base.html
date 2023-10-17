@@ -47,7 +47,7 @@
             backButton.href = '{{ url_for('business_index') }}';
         {% elif request.endpoint == 'esd_index' %}
             backButton.href = '{{ url_for('index') }}';
-        {% elif request.endpoint in ['enter_emission_factors_data', 'enter_energy_rating_data', 'view_energy_rating_data'] %}
+        {% elif request.endpoint in ['enter_emission_factors_data', 'enter_energy_rating_data', 'view_energy_rating_data', 'view_energy_rating_data_with_id'] %}
             backButton.href = '{{ url_for('esd_index') }}';
         {% elif request.endpoint == 'ev_index' %}
             backButton.href = '{{ url_for('index') }}';

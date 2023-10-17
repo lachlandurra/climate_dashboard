@@ -20,7 +20,7 @@
         </thead>
         <tbody>
             {% for data in energy_data %}
-            <tr>
+            <tr {% if data.id == highlighted_id %}class="highlighted"{% endif %}>
                 <td><span class="delete-data" data-data-id="{{ data.id }}"><i class="fas fa-trash"></i></span></td>
                 <td contenteditable="true" data-type="year" data-data-id="{{ data.id }}">{{ data.year }}</td>
                 <td>
@@ -53,6 +53,13 @@
 </div>
 <script>
     $(document).ready(function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+
+        if (id) {
+            $(`[data-data-id=${id}]`).closest('tr').css('background-color', 'yellow');
+        }
+
         $(".delete-data").click(function() {
             var dataId = $(this).data('data-id');
             
@@ -73,5 +80,4 @@
     });
 </script>
 <script src="{{ url_for('static', filename='esd_script.js') }}"></script>
-
 {% endblock %}

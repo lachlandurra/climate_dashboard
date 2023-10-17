@@ -549,7 +549,20 @@ def create_app():
             return jsonify(success=True)
 
         return render_template('esd/view_energy_rating_data.html', energy_data=energy_data)
-    
+
+    @app.route('/view_energy_rating_data/<int:data_id>', methods=['GET'])
+    def view_energy_rating_data_with_id(data_id):
+        energy_data = EnergyRatingData.query.order_by(
+            asc(EnergyRatingData.year),
+            asc(EnergyRatingData.half_year)
+        ).all()
+
+        return render_template(
+            'esd/view_energy_rating_data.html',
+            energy_data=energy_data,
+            highlighted_id=data_id
+        )
+
     @app.route('/delete_energy_data/<int:data_id>', methods=['POST'])
     def delete_energy_data(data_id):
         try:
@@ -622,10 +635,11 @@ def create_app():
             year = item.year
             class_ = item.class_
             mj_saved = item.mj_saved_per_annum
-            half_year = item.half_year  # This should not be overwritten in each iteration
+            half_year = item.half_year
+            id_ = item.id
 
             if mj_saved is not None:
-                organized_data[year][class_][half_year].append(mj_saved)  # Store mj_saved by half_year as well
+                organized_data[year][class_][half_year].append((mj_saved, id_))
 
 
         # Calculating the average MJ saved per annum for each class per year
@@ -633,15 +647,19 @@ def create_app():
 
         for year, classes in organized_data.items():
             for class_, half_years in classes.items():
-                for half_year, mj_saved_list in half_years.items():  # Process each half_year individually
-                    avg_mj_saved = sum(mj_saved_list) / len(mj_saved_list) if mj_saved_list else 0
+                for half_year, mj_saved_list in half_years.items():
+                    if mj_saved_list:
+                        avg_mj_saved = sum([item[0] for item in mj_saved_list]) / len(mj_saved_list)
+                        id_ = mj_saved_list[0][1]  # Here, extract the id from the first tuple in the list (adjust as needed)
 
-                    results.append({
-                        "year": year,
-                        "class": class_,
-                        "avg_mj_saved_per_annum": avg_mj_saved,
-                        "half_year": half_year  # This now corresponds to the correct half_year
-                    })
+                        results.append({
+                            "year": year,
+                            "class": class_,
+                            "avg_mj_saved_per_annum": avg_mj_saved,
+                            "half_year": half_year,
+                            "id": id_  # Here, added the id to the result dictionary
+                        })
+
 
         return jsonify(results)
 
