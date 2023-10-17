@@ -1,9 +1,77 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="home-container">
+<div class="home-container" id="evIndexPage">
     <div class="welcome-text">
-        Not yet implemented
+        Welcome to the EV Data Dashboard!
     </div>
-    
+    <div class="backlogs">
+
+        <div class="backlog-container backlog1 backlog-google-insights">
+            <h2>Google Insights Explorer Data</h2>
+        
+            <!-- Button to upload data -->
+            <form action="{{ url_for('upload_google_insights') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file">
+                <button type="submit" class="global-btn">Upload CSV</button>
+            </form>
+        
+            <!-- Data summary -->
+            <div class="data-summary">
+                {% if google_insights_summary and 'yearly_summary' in google_insights_summary %}
+                <h3>Data Summary</h3>
+        
+                <div class="chart-container">
+                    <!-- A chart can be inserted here to show emissions by mode, distance, year, etc. -->
+                    <p><strong>Chart:</strong> Emissions by Transport Mode and Year</p>
+                    <!-- Add a D3.js or Chart.js visualization here -->
+                </div>
+        
+                <div class="numeric-summary">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Total Trips</th>
+                                <th>Total Distance (km)</th>
+                                <th>Total CO2e Emissions (tons)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for year, summary in google_insights_summary['yearly_summary'].items() %}
+                            <tr>
+                                <td>{{ year }}</td>
+                                <td>{{ summary['trips'] }}</td>
+                                <td>{{ summary['full_distance_km']|float|round(2) }}</td>
+                                <td>{{ summary['full_co2e_tons']|float|round(2) }}</td>
+                            </tr>
+                            {% endfor %}                            
+                        </tbody>
+                    </table>
+                </div>
+        
+                {% else %}
+                <p>No data uploaded yet. Please upload the Google Insights Explorer data CSV file.</p>
+                {% endif %}
+            </div>
+        </div>        
+        
+        <div class="backlog-container backlog2">
+            <h2>VISTA Data</h2>
+            <form action="{{ url_for('upload_vista') }}" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv">
+                <input type="submit" value="Upload CSV" class="global-btn">
+            </form>
+        </div>
+    </div>
+    <div class="backlogs">
+        <div class="backlog-container backlog3">
+            <h2>Evie Data</h2>
+            <form action="{{ url_for('upload_evie') }}" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv">
+                <input type="submit" value="Upload CSV" class="global-btn">
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

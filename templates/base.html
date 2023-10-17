@@ -20,9 +20,7 @@
             <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('view_reports') }}">View Reports</a>
         </nav>
-        <!-- I WANT THE BACK BUTTON HERE -->
     </div>
-    <!-- <hr> -->
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

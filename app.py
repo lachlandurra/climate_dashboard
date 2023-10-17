@@ -10,6 +10,8 @@ import base64
 from docx.shared import Inches
 from sqlalchemy import asc
 from collections import defaultdict
+import pandas as pd
+import os
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -18,6 +20,9 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///climatedashboard.db'
+    UPLOAD_FOLDER = 'uploads'
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    ALLOWED_EXTENSIONS = {'csv'}
 
     print("Database URI:", app.config['SQLALCHEMY_DATABASE_URI'])  # Add this line for debugging
     app.secret_key = 'your_secret_key_here'
@@ -662,6 +667,93 @@ def create_app():
 
 
         return jsonify(results)
+
+    @app.route('/upload_google_insights', methods=['POST'])
+    def upload_google_insights():
+        # Check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        
+        file = request.files['file']
+
+        # If user does not select file, browser also
+        # submits an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+
+        if file and allowed_file(file.filename):
+            filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(filename)
+            
+            # Process the file and create a summary
+            summary = process_google_insights_data(filename)
+            
+            # Redirect to the EV index page with the summary data
+            return render_template('ev/ev_index.html', google_insights_summary=summary)
+
+        return redirect(url_for('ev_index'))
+
+
+    def process_google_insights_data(filepath):
+        df = pd.read_csv(filepath)
+        
+        # Ensure these columns exist, and handle appropriately if they don't
+        total_trips = df['trips'].sum() if 'trips' in df else 0
+        total_distance = df['full_distance_km'].sum() if 'full_distance_km' in df else 0
+        total_co2e = df['full_co2e_tons'].sum() if 'full_co2e_tons' in df else 0
+        
+        yearly_summary = df.groupby('year')[['trips', 'full_distance_km', 'full_co2e_tons']].sum().to_dict('index') if 'year' in df else {}
+
+        summary = {
+            'total_trips': total_trips,
+            'total_distance': total_distance,
+            'total_co2e': total_co2e,
+            'yearly_summary': yearly_summary
+        }
+
+        return summary
+
+
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    @app.route('/upload_vista', methods=['POST'])
+    def upload_vista():
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.referrer)
+        
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.referrer)
+        
+        if file:
+            df = pd.read_csv(file)
+            # TODO: Add your logic here to process the data frame as needed
+            flash('VISTA data uploaded successfully!')
+            return redirect(url_for('ev_index'))
+
+    @app.route('/upload_evie', methods=['POST'])
+    def upload_evie():
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.referrer)
+        
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.referrer)
+        
+        if file:
+            df = pd.read_csv(file)
+            # TODO: Add your logic here to process the data frame as needed
+            flash('Evie data uploaded successfully!')
+            return redirect(url_for('ev_index'))
 
     return app
 
