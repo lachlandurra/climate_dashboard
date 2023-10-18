@@ -703,6 +703,7 @@ def create_app():
             required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
             if not all(column in df.columns for column in required_columns):
                 return {}
+            df = df[df['travel_bounds'] != 'TOTAL']
 
             # CO2 emissions each year, broken down by mode of transport
             emissions_by_year_mode = df.groupby(['year', 'mode'])['full_co2e_tons'].sum().unstack().fillna(0)
@@ -741,14 +742,14 @@ def create_app():
             total_km = df['full_distance_km'].sum()
             km_percent_by_bounds = (df.groupby('travel_bounds')['full_distance_km'].sum() / total_km * 100).to_dict()
 
-            # Total combined number of trips
-            total_trips = df['trips'].sum()
+            # Total combined number of trips per year
+            total_trips_by_year = df.groupby('year')['trips'].sum().to_dict()
+
+            # Total combined vehicle kilometers traveled per year
+            total_vehicle_km_by_year = df.groupby('year')['full_distance_km'].sum().to_dict()
 
             # Percent of total combined kilometers by mode
             km_percent_by_mode = (df.groupby('mode')['full_distance_km'].sum() / total_km * 100).to_dict()
-
-            # Total combined vehicle kilometers traveled
-            total_vehicle_km = df['full_distance_km'].sum()
 
             # Emissions by travel bounds and year
             emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['full_co2e_tons'].sum().unstack().fillna(0).to_dict()
@@ -759,14 +760,11 @@ def create_app():
                 'yearly_emissions': yearly_emissions,
                 'emissions_percent_by_bounds': emissions_percent_by_bounds,
                 'km_percent_by_bounds': km_percent_by_bounds,
-                'total_trips': total_trips,
+                'total_trips_by_year': total_trips_by_year,
                 'km_percent_by_mode': km_percent_by_mode,
-                'total_vehicle_km': total_vehicle_km,
+                'total_vehicle_km_by_year': total_vehicle_km_by_year,
                 'emissions_by_bounds_year': emissions_by_bounds_year
             })
-
-            print(summary['emissions_by_bounds_year'])
-
 
             return summary
         except Exception as e:

@@ -250,11 +250,47 @@
         </div>
     </div>
 
-    <div class="simple-heading">Total Combined Number of Trips</div>
-    <p>{{ google_insights_summary.total_trips }} trips</p>
-
-    <div class="simple-heading">Total Combined Vehicle Kilometers Traveled</div>
-    <p>{{ google_insights_summary.total_vehicle_km|float|round(2) }} km</p>
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">Total Combined Number of Trips by Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Trips</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, trips in google_insights_summary.total_trips_by_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(trips) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">Total Combined Vehicle Kilometers Traveled by Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Kilometers Traveled</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, km in google_insights_summary.total_vehicle_km_by_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(km) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
 
     <div style="display: flex; gap: 20px;">
         <div class="data-table-container">
@@ -317,7 +353,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="data-table-container">
+        <!-- <div class="data-table-container">
             <div class="simple-heading">Total tCO2e per Year</div>
             <table class="data-table">
                 <thead>
@@ -335,7 +371,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+        </div> -->
     </div>
 
     <!-- Insert JavaScript for Graphs/Charts -->
