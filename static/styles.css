@@ -1,6 +1,6 @@
 /* Global Styles */
 * {
-    margin: 0;
+    /* margin: 0; */
     padding: 0;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
@@ -196,8 +196,8 @@ nav.fill a:after {
 .backlog-container {
     flex: 0 0 48%;
     background: #FFFFFF;
-    width: 95%; 
-    border: 1px solid #ccc; 
+    width: 95%;
+    border: 1px solid #ccc;
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
@@ -313,7 +313,7 @@ nav.fill a:after {
 
 .task-container {
     width: 100%;
-    border-collapse: collapse;  
+    border-collapse: collapse;
 }
 
 .task-container select:focus {

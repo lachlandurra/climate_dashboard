@@ -698,8 +698,6 @@ def create_app():
     def process_google_insights_data(filepath):
         try:
             df = pd.read_csv(filepath)
-            print("statement 1")
-            print(df.head())
 
             # Ensuring existence of required columns
             required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
@@ -726,10 +724,66 @@ def create_app():
                 'zero_emission_modes': df[df['full_co2e_tons'] == 0]['mode'].unique().tolist()  # Modes like cycling, walking contributing zero emissions
             }
 
+            first_year_modes = list(next(iter(summary['emissions_by_year_mode'].values())).keys())
+
+            summary.update({
+                'first_year_modes': first_year_modes
+            })
+
+                    # Yearly emissions
+            yearly_emissions = df.groupby('year')['full_co2e_tons'].sum().to_dict()
+
+            # Percent of total transportation emissions
+            total_emissions = df['full_co2e_tons'].sum()
+            emissions_percent_by_bounds = (df.groupby('travel_bounds')['full_co2e_tons'].sum() / total_emissions * 100).to_dict()
+
+            # Percent of total kilometers traveled
+            total_km = df['full_distance_km'].sum()
+            km_percent_by_bounds = (df.groupby('travel_bounds')['full_distance_km'].sum() / total_km * 100).to_dict()
+
+            # Total combined number of trips
+            total_trips = df['trips'].sum()
+
+            # Percent of total combined kilometers by mode
+            km_percent_by_mode = (df.groupby('mode')['full_distance_km'].sum() / total_km * 100).to_dict()
+
+            # Total combined vehicle kilometers traveled
+            total_vehicle_km = df['full_distance_km'].sum()
+
+            # Emissions by travel bounds and year
+            emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['full_co2e_tons'].sum().unstack().fillna(0).to_dict()
+
+
+            # Adding new data to summary dictionary
+            summary.update({
+                'yearly_emissions': yearly_emissions,
+                'emissions_percent_by_bounds': emissions_percent_by_bounds,
+                'km_percent_by_bounds': km_percent_by_bounds,
+                'total_trips': total_trips,
+                'km_percent_by_mode': km_percent_by_mode,
+                'total_vehicle_km': total_vehicle_km,
+                'emissions_by_bounds_year': emissions_by_bounds_year
+            })
+
+            print(summary['emissions_by_bounds_year'])
+
+
             return summary
         except Exception as e:
             print("Error inside process_google_insights_data:", e)
             return {}
+
+    @app.route('/google_insights_summary', methods=['GET'])
+    def google_insights_summary():
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
+
+        if os.path.exists(file_path):
+            summary = process_google_insights_data(file_path)
+            return render_template('ev/google_insights_summary.html', google_insights_summary=summary)
+        else:
+            flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
+            return redirect(url_for('ev_index'))
+
 
     @app.route('/ev_index')
     def ev_index():

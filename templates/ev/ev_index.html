@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .backlog-container {
+        flex: 0 0 100%;
+    }
+</style>
 <div class="home-container" id="evIndexPage">
     <div class="welcome-text">
         Welcome to the EV Data Dashboard!
@@ -17,59 +22,14 @@
             </form>
         
             <!-- Data summary -->
-            <div class="data-summary">
-                {% if google_insights_summary %}
-                <h3>Data Summary</h3>
-                
-                <h4>Emissions by Year and Mode of Transport</h4>
-                <ul>
-                    {% for year, modes in google_insights_summary.emissions_by_year_mode.items() %}
-                    <li>
-                        <strong>{{ year }}</strong>:
-                        {% for mode, emission in modes.items() %}
-                            {{ mode }}: {{ emission|float|round(2) }} tons,
-                        {% endfor %}
-                    </li>
-                    {% endfor %}
-                </ul>
-
-                <h4>Average Emissions per Trip by Mode of Transport</h4>
-                <ul>
-                    {% for mode, avg_emission in google_insights_summary.avg_emissions_per_trip.items() %}
-                    <li>{{ mode }}: {{ avg_emission|float|round(2) }} tons/trip</li>
-                    {% endfor %}
-                </ul>
-
-                <h4>Emissions by Travel Bounds</h4>
-                <ul>
-                    {% for bounds, emission in google_insights_summary.emissions_by_bounds.items() %}
-                    <li>{{ bounds }}: {{ emission|float|round(2) }} tons</li>
-                    {% endfor %}
-                </ul>
-
-                <h4>CO2 Emissions per Kilometer by Mode of Transport</h4>
-                <ul>
-                    {% for mode, emission_per_km in google_insights_summary.emissions_per_km.items() %}
-                    <li>{{ mode }}: {{ emission_per_km|float|round(2) }} tons/km</li>
-                    {% endfor %}
-                </ul>
-
-                <h4>Zero Emission Modes of Transport</h4>
-                <ul>
-                    {% for mode in google_insights_summary.zero_emission_modes %}
-                    <li>{{ mode }}</li>
-                    {% endfor %}
-                </ul>
-
-                {% else %}
-                <p>No data uploaded yet. Please upload the Google Insights Explorer data CSV file.</p>
-                {% endif %}
-            </div>
+            <a href="{{ url_for('google_insights_summary') }}" class="global-btn">Data Summary</a>
+            
             <form action="{{ url_for('clear_google_insights') }}" method="POST">
                 <button type="submit" class="global-btn">Clear Data</button>
             </form>            
         </div>        
-        
+    </div>
+    <div class="backlogs">
         <div class="backlog-container backlog2">
             <h2>VISTA Data</h2>
             <form action="{{ url_for('upload_vista') }}" method="post" enctype="multipart/form-data">

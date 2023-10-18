@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+
+    .data-table-container {
+        flex: 1; /* Allows the container to grow and shrink */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: auto;
+        font-size: 18px;
+        text-align: left;
+        flex-grow: 1;
+    }
+    .data-table th,
+    .data-table td {
+        padding: 12px 15px;
+    }
+    .data-table thead tr {
+        background-color: #009879;
+        color: #ffffff;
+        text-align: left;
+    }
+    .data-table tbody tr:nth-of-type(even) {
+        background-color: #f3f3f3;
+    }
+
+    /* Simplified Heading */
+    .simple-heading {
+        font-size: 28px;
+        color: #080808;
+        text-align: center;
+        padding: 15px 0;
+        border-bottom: 2px solid #b80000;
+        margin-bottom: 15px;
+    }
+
+    /* Styling for ul */
+    ul {
+        list-style-type: disc;
+        margin-left: 20px;
+        padding-left: 20px;
+    }
+
+    li {
+        padding: 3px 0;
+    }
+</style>
+
+{% macro format_number(value) %}
+  {{ "{:,.0f}".format(value|float) }}
+{% endmacro %}
+
+<div class="backlog-container">
+    {% if google_insights_summary %}
+    <div class="one">
+        <h1>Data Summary</h1>
+    </div>
+    
+    <div class="simple-heading">Emissions by Year and Mode of Transport</div>
+    <table class="data-table full-width">
+        <thead>
+            <tr>
+                <th>Year</th>
+                {% for mode in google_insights_summary.first_year_modes %}
+                <th>{{ mode }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for year, modes in google_insights_summary.emissions_by_year_mode.items() %}
+            <tr>
+                <td>{{ year }}</td>
+                {% for mode in google_insights_summary.first_year_modes %}
+                <td>{{ format_number(modes[mode]) }} tons</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">Average Emissions per Trip by Mode of Transport</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mode of Transport</th>
+                        <th>Average Emissions per Trip (tons/trip)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mode, avg_emission in google_insights_summary.avg_emissions_per_trip.items() %}
+                    <tr>
+                        <td>{{ mode }}</td>
+                        <td>{{ format_number(avg_emission) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">Emissions by Travel Bounds</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Travel Bounds</th>
+                        <th>Emissions (tons)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bounds, emission in google_insights_summary.emissions_by_bounds.items() %}
+                    <tr>
+                        <td>{{ bounds }}</td>
+                        <td>{{ format_number(emission) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">CO2 Emissions per Kilometer by Mode of Transport</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mode of Transport</th>
+                        <th>Emissions per Kilometer (tons/km)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mode, emission_per_km in google_insights_summary.emissions_per_km.items() %}
+                    <tr>
+                        <td>{{ mode }}</td>
+                        <td>{{ format_number(emission_per_km) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-table-container">
+            <div class="simple-heading">Zero Emission Modes of Transport</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mode of Transport</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mode in google_insights_summary.zero_emission_modes %}
+                    <tr>
+                        <td>{{ mode }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">Yearly Emissions</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Total tCO2e per year</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, emission in google_insights_summary.yearly_emissions.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(emission) }} tons</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">% of Total Transportation Emissions by Travel Bounds</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Travel Bounds</th>
+                        <th>% Emissions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bounds, percent in google_insights_summary.emissions_percent_by_bounds.items() %}
+                    <tr>
+                        <td>{{ bounds }}</td>
+                        <td>{{ format_number(percent) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">% of Total Kilometers Traveled by Travel Bounds</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Travel Bounds</th>
+                        <th>% Kilometers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bounds, percent in google_insights_summary.km_percent_by_bounds.items() %}
+                    <tr>
+                        <td>{{ bounds }}</td>
+                        <td>{{ format_number(percent) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">% of Total Combined Kilometers by Mode of Transport</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mode of Transport</th>
+                        <th>% of kilometers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mode, percent in google_insights_summary.km_percent_by_mode.items() %}
+                    <tr>
+                        <td>{{ mode }}</td>
+                        <td>{{ format_number(percent) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="simple-heading">Total Combined Number of Trips</div>
+    <p>{{ google_insights_summary.total_trips }} trips</p>
+
+    <div class="simple-heading">Total Combined Vehicle Kilometers Traveled</div>
+    <p>{{ google_insights_summary.total_vehicle_km|float|round(2) }} km</p>
+
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">Inbound total tCO2e per Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Inbound tCO2e</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, bounds_data in google_insights_summary.emissions_by_bounds_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(bounds_data.get('INBOUND', 0)) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">Outbound total tCO2e per Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Outbound tCO2e</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, bounds_data in google_insights_summary.emissions_by_bounds_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(bounds_data.get('OUTBOUND', 0)) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div class="data-table-container">
+            <div class="simple-heading">In-Boundary total tCO2e per Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>In-Boundary tCO2e</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, bounds_data in google_insights_summary.emissions_by_bounds_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(bounds_data.get('IN-BOUNDARY', 0)) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="data-table-container">
+            <div class="simple-heading">Total tCO2e per Year</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Total tCO2e</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, bounds_data in google_insights_summary.emissions_by_bounds_year.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ format_number(bounds_data.get('TOTAL', 0)) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Insert JavaScript for Graphs/Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <canvas id="myChart" width="400" height="200"></canvas>
+    <script>
+        // Your JS code to create graphs/charts using the Chart.js library
+    </script>
+
+    {% else %}
+    <p>No data uploaded yet. Please upload the Google Insights Explorer data CSV file.</p>
+    {% endif %}
+</div>
+{% endblock %}
