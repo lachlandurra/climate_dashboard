@@ -695,9 +695,12 @@ def create_app():
 
         return redirect(url_for('ev_index'))
 
-    def process_google_insights_data(filepath):
+    def process_google_insights_data(filepath, year_filter='all'):
         try:
             df = pd.read_csv(filepath)
+
+            if year_filter != 'all':
+                df = df[df['year'] == int(year_filter)]
 
             # Ensuring existence of required columns
             required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
@@ -754,6 +757,8 @@ def create_app():
             # Emissions by travel bounds and year
             emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['full_co2e_tons'].sum().unstack().fillna(0).to_dict()
 
+            unique_years = df['year'].unique().tolist()
+
 
             # Adding new data to summary dictionary
             summary.update({
@@ -763,13 +768,26 @@ def create_app():
                 'total_trips_by_year': total_trips_by_year,
                 'km_percent_by_mode': km_percent_by_mode,
                 'total_vehicle_km_by_year': total_vehicle_km_by_year,
-                'emissions_by_bounds_year': emissions_by_bounds_year
+                'emissions_by_bounds_year': emissions_by_bounds_year,
+                'unique_years': unique_years
             })
 
             return summary
         except Exception as e:
             print("Error inside process_google_insights_data:", e)
             return {}
+
+    @app.route('/filtered_data', methods=['GET'])
+    def filtered_data():
+        year_filter = request.args.get('year_filter', 'all')
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
+
+        if os.path.exists(file_path):
+            summary = process_google_insights_data(file_path, year_filter)
+            return render_template('ev/google_insights_summary.html', google_insights_summary=summary)
+        else:
+            flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
+            return redirect(url_for('ev_index'))
 
     @app.route('/google_insights_summary', methods=['GET'])
     def google_insights_summary():
