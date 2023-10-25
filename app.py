@@ -751,14 +751,25 @@ def create_app():
             # Total combined vehicle kilometers traveled per year
             total_vehicle_km_by_year = df.groupby('year')['full_distance_km'].sum().to_dict()
 
+            total_vehicle_km_by_mode = df.groupby('mode')['full_distance_km'].sum().to_dict()
+
+
             # Percent of total combined kilometers by mode
             km_percent_by_mode = (df.groupby('mode')['full_distance_km'].sum() / total_km * 100).to_dict()
+            emissions_percent_by_mode = (df.groupby('mode')['full_co2e_tons'].sum() / total_emissions * 100).to_dict()
 
             # Emissions by travel bounds and year
             emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['full_co2e_tons'].sum().unstack().fillna(0).to_dict()
 
             unique_years = df['year'].unique().tolist()
 
+            # Total trips by mode and year
+            total_trips_by_mode_year = df.groupby(['mode', 'year'])['trips'].sum().unstack().fillna(0).to_dict()
+
+            # Total kilometers by mode and year
+            total_km_by_mode_year = df.groupby(['mode', 'year'])['full_distance_km'].sum().unstack().fillna(0).to_dict()
+
+            unique_modes = df['mode'].unique().tolist()
 
             # Adding new data to summary dictionary
             summary.update({
@@ -769,8 +780,15 @@ def create_app():
                 'km_percent_by_mode': km_percent_by_mode,
                 'total_vehicle_km_by_year': total_vehicle_km_by_year,
                 'emissions_by_bounds_year': emissions_by_bounds_year,
-                'unique_years': unique_years
+                'unique_years': unique_years,
+                'total_trips_by_mode_year': total_trips_by_mode_year,
+                'total_km_by_mode_year': total_km_by_mode_year,
+                'total_vehicle_km_by_mode': total_vehicle_km_by_mode,
+                'unique_modes': unique_modes,
+                'emissions_percent_by_mode': emissions_percent_by_mode
             })
+
+            # print(summary)
 
             return summary
         except Exception as e:
@@ -781,13 +799,23 @@ def create_app():
     def filtered_data():
         year_filter = request.args.get('year_filter', 'all')
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
-
+        
         if os.path.exists(file_path):
+            # Load the entire dataset to get unique years
+            df_all = pd.read_csv(file_path)
+            unique_years_all = df_all['year'].unique().tolist()
+
+            # Load the filtered dataset for the summary
             summary = process_google_insights_data(file_path, year_filter)
-            return render_template('ev/google_insights_summary.html', google_insights_summary=summary)
+
+            # Overwrite unique_years in summary with the list computed from entire dataset
+            summary['unique_years'] = unique_years_all
+            
+            return render_template('ev/google_insights_summary.html', google_insights_summary=summary, year_filter=year_filter)
         else:
             flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
             return redirect(url_for('ev_index'))
+
 
     @app.route('/google_insights_summary', methods=['GET'])
     def google_insights_summary():

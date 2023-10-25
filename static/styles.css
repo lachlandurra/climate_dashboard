@@ -685,3 +685,115 @@ th {
 .highlighted {
     background-color: yellow;
 }
+
+.data-table-container {
+    flex: 1; /* Allows the container to grow and shrink */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: auto;
+    font-size: 18px;
+    text-align: left;
+    flex-grow: 1;
+}
+.data-table th,
+.data-table td {
+    padding: 12px 15px;
+}
+.data-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+.data-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+/* Simplified Heading */
+.simple-heading {
+    font-size: 28px;
+    color: #080808;
+    text-align: center;
+    padding: 15px 0;
+    border-bottom: 2px solid #b80000;
+    margin-bottom: 15px;
+}
+
+/* Styling for ul */
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+
+li {
+    padding: 3px 0;
+}
+
+.graph-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-container {
+    max-width: 400px;  /* Adjust this value as needed */
+    width: 100%;
+    height: 500px;    /* Adjust this value as needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.chart-max-width {
+    max-width: 800px;
+}
+
+form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+select {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #aaa;
+}
+
+button[type="submit"] {
+    padding: 8px 16px;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.centered-form {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;  /* You can adjust this value for vertical spacing */
+}
+
+.centered-form form {
+    display: flex;  /* This makes the children of form (i.e., the select and button) align horizontally */
+    align-items: center;  /* Vertically align the button and select box */
+    gap: 10px;  /* Provides a little spacing between the select box and the button */
+}

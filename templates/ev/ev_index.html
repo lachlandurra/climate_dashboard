@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-    .backlog-container {
-        flex: 0 0 100%;
-    }
-</style>
 <div class="home-container" id="evIndexPage">
     <div class="welcome-text">
         Welcome to the EV Data Dashboard!
@@ -27,16 +22,14 @@
             <form action="{{ url_for('clear_google_insights') }}" method="POST">
                 <button type="submit" class="global-btn">Clear Data</button>
             </form>            
-        </div>        
-    </div>
-    <div class="backlogs">
+        </div>       
         <div class="backlog-container backlog2">
             <h2>VISTA Data</h2>
             <form action="{{ url_for('upload_vista') }}" method="post" enctype="multipart/form-data">
                 <input type="file" name="file" accept=".csv">
                 <input type="submit" value="Upload CSV" class="global-btn">
             </form>
-        </div>
+        </div> 
     </div>
     <div class="backlogs">
         <div class="backlog-container backlog3">

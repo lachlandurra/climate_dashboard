@@ -1,57 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-
-    .data-table-container {
-        flex: 1; /* Allows the container to grow and shrink */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: auto;
-        font-size: 18px;
-        text-align: left;
-        flex-grow: 1;
-    }
-    .data-table th,
-    .data-table td {
-        padding: 12px 15px;
-    }
-    .data-table thead tr {
-        background-color: #009879;
-        color: #ffffff;
-        text-align: left;
-    }
-    .data-table tbody tr:nth-of-type(even) {
-        background-color: #f3f3f3;
-    }
-
-    /* Simplified Heading */
-    .simple-heading {
-        font-size: 28px;
-        color: #080808;
-        text-align: center;
-        padding: 15px 0;
-        border-bottom: 2px solid #b80000;
-        margin-bottom: 15px;
-    }
-
-    /* Styling for ul */
-    ul {
-        list-style-type: disc;
-        margin-left: 20px;
-        padding-left: 20px;
-    }
-
-    li {
-        padding: 3px 0;
-    }
-</style>
 
 {% macro format_number(value) %}
   {{ "{:,.0f}".format(value|float) }}
@@ -64,36 +13,45 @@
         <h1>Data Summary</h1>
     </div>
 
-    <form method="get" action="/filtered_data">
-        <select name="year_filter">
-            <option value="all">All Years</option>
-            {% for year in google_insights_summary.unique_years %}
-            <option value="{{ year }}">{{ year }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Filter</button>
-    </form>
+    <div class="centered-form">
+        <form method="get" action="/filtered_data">
+            <select name="year_filter">
+                <option value="all">All Years</option>
+                {% for year in google_insights_summary.unique_years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+    </div>    
+
+    <div class="graph-container">
+        {% if year_filter == 'all' %}
+            <canvas id="lineGraphAllModes" class="chart-max-width"></canvas>
+            <canvas id="lineGraphByMode" class="chart-max-width"></canvas>
+            <canvas id="columnGraphYearly" class="chart-max-width"></canvas>
+        {% endif %}
     
-
-    <!-- <div class="mode-filter">
-        <label for="mode-select">Select Mode:</label>
-        <select id="mode-select" onchange="filterByMode()">
-            <option value="all">All Modes</option>
-            {% for mode in google_insights_summary.emissions_by_year_mode.keys() %}
-            <option value="{{ mode }}">{{ mode }}</option>
-            {% endfor %}
-        </select>
-    </div>     -->
-
-    <!-- <div class="year-filter">
-        <label for="year-select">Select Year:</label>
-        <select id="year-select" onchange="filterByYear()">
-            <option value="all">All Years</option>
-            {% for year in google_insights_summary.unique_years %}
-            <option value="{{ year }}">{{ year }}</option>
-            {% endfor %}
-        </select>
-    </div> -->
+        <div style="display: flex; gap: 20px;">
+            <div class="chart-container">
+                <canvas id="pieChartInboundOutbound"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="pieChartVehicleKilometers"></canvas>
+            </div>
+        </div>
+    
+        <div style="display: flex; gap: 20px;">
+            <div class="chart-container">
+                <canvas id="pieChartKmByMode"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="pieChartEmissionsByMode"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    
     
     <div class="simple-heading">Emissions by Year and Mode of Transport</div>
     <table class="data-table full-width">
@@ -383,59 +341,321 @@
                 </tbody>
             </table>
         </div>
-        <!-- <div class="data-table-container">
-            <div class="simple-heading">Total tCO2e per Year</div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Year</th>
-                        <th>Total tCO2e</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for year, bounds_data in google_insights_summary.emissions_by_bounds_year.items() %}
-                    <tr>
-                        <td>{{ year }}</td>
-                        <td>{{ format_number(bounds_data.get('TOTAL', 0)) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div> -->
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
-        function filterByMode() {
-            const selectedMode = document.getElementById('mode-select').value;
-            
-            document.querySelectorAll(".data-table tbody tr").forEach(row => {
-                const modeCell = row.querySelector("td:first-child");
-                if (modeCell) {
-                    if (selectedMode === "all" || modeCell.textContent === selectedMode) {
-                        row.style.display = ""; // show row
-                    } else {
-                        row.style.display = "none"; // hide row
-                    }
-                }
-            });
-        }
-
-        function filterByYear() {
-            const selectedYear = document.getElementById('year-select').value;
-            
-            document.querySelectorAll(".data-table tbody tr").forEach(row => {
-                const yearCell = row.querySelector("td:first-child");
-                if (yearCell) {
-                    if (selectedYear === "all" || yearCell.textContent === selectedYear) {
-                        row.style.display = ""; // show row
-                    } else {
-                        row.style.display = "none"; // hide row
-                    }
-                }
-            });
-        }
-
+        let chartTitle;
     </script>
+
+    <script>
+        let ctx = document.getElementById('lineGraphAllModes').getContext('2d');
+        let dataForAllModes = {
+            labels: {{ google_insights_summary.unique_years|tojson|safe }},  // Years as the labels
+            datasets: [{
+                label: 'Emissions',
+                data: Object.values({{ google_insights_summary.yearly_emissions|tojson|safe }}), // Extracting values from the yearly emissions dictionary
+                borderColor: 'rgba(75, 192, 192, 1)',
+                fill: false
+            }]
+        };
+
+        let lineGraphAllModes = new Chart(ctx, {
+            type: 'line',
+            data: dataForAllModes,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Total emissions over time'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Emissions'
+                        }
+                    }
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            // Get mode based on the tooltipItem
+                            let mode = data.labels[tooltipItem.index];
+                            
+                            // Assuming you have additional details in the dataset (you can add custom properties)
+                            let trips = data.datasets[tooltipItem.datasetIndex].trips[tooltipItem.index];
+                            let distance = data.datasets[tooltipItem.datasetIndex].distance[tooltipItem.index];
+
+                            return [
+                                'Mode: ' + mode,
+                                'Total Trips: ' + trips,
+                                'Total Distance: ' + distance
+                            ];
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxByMode = document.getElementById('lineGraphByMode').getContext('2d');
+        let datasetsByMode = [];
+        let colors = ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 205, 86, 1)', 'rgba(54, 162, 235, 1)'];  // Example colors
+        
+        {% for mode, emissions in google_insights_summary.emissions_by_year_mode.items() %}
+            datasetsByMode.push({
+                label: "{{ mode }}",
+                data: Object.values({{ emissions|tojson|safe }}),
+                borderColor: colors[{{ loop.index0 % 4 }}],  // Loop through colors
+                fill: false
+            });
+        {% endfor %}
+
+        let dataForByModeChart = {
+            labels: {{ google_insights_summary.unique_years|tojson|safe }},
+            datasets: datasetsByMode
+        };
+
+        let lineGraphByMode = new Chart(ctxByMode, {
+            type: 'line',
+            data: dataForByModeChart,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Emissions over time by mode'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Emissions'
+                        }
+                    }
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            let mode = data.datasets[tooltipItem.datasetIndex].label;
+                            return 'Mode: ' + mode + ', Emissions: ' + tooltipItem.value;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxYearly = document.getElementById('columnGraphYearly').getContext('2d');
+        let dataForYearlyEmissions = {
+            labels: {{ google_insights_summary.unique_years|tojson|safe }},
+            datasets: [{
+                label: 'Emissions',
+                data: Object.values({{ google_insights_summary.yearly_emissions|tojson|safe }}),
+                backgroundColor: 'rgba(75, 192, 192, 1)'
+            }]
+        };
+
+        let columnGraphYearly = new Chart(ctxYearly, {
+            type: 'bar',
+            data: dataForYearlyEmissions,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Yearly Emissions'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Emissions'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxEmissionsByBounds = document.getElementById('pieChartInboundOutbound').getContext('2d');
+        let dataForEmissionsByBounds = {
+            labels: Object.keys({{ google_insights_summary.emissions_by_bounds|tojson|safe }}),
+            datasets: [{
+                data: Object.values({{ google_insights_summary.emissions_by_bounds|tojson|safe }}),
+                backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 205, 86, 1)']
+            }]
+        };
+
+        chartTitle = '{{ year_filter }}' === 'all' 
+                        ? 'Emissions by Inbound, Outbound, In-boundary' 
+                        : 'Emissions by Inbound, Outbound, In-boundary for ' + '{{ year_filter }}';
+
+        let pieChartEmissionsByBounds = new Chart(ctxEmissionsByBounds, {
+            type: 'pie',
+            data: dataForEmissionsByBounds,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: chartTitle
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxKmByBounds = document.getElementById('pieChartVehicleKilometers').getContext('2d');
+        let dataForKmByBounds = {
+            labels: Object.keys({{ google_insights_summary.km_percent_by_bounds|tojson|safe }}),
+            datasets: [{
+                data: Object.values({{ google_insights_summary.km_percent_by_bounds|tojson|safe }}),
+                backgroundColor: ['rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)', 'rgba(255, 255, 0, 1)']
+            }]
+        };
+
+        chartTitle = '{{ year_filter }}' === 'all' 
+                        ? 'Vehicle Kilometers by Inbound, Outbound, In-boundary' 
+                        : 'Vehicle Kilometers by Inbound, Outbound, In-boundary for ' + '{{ year_filter }}';
+
+        let pieChartKmByBounds = new Chart(ctxKmByBounds, {
+            type: 'pie',
+            data: dataForKmByBounds,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: chartTitle
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxKmByMode = document.getElementById('pieChartKmByMode').getContext('2d');
+        
+        let dataForKmByMode = {
+            labels: {{ google_insights_summary.unique_modes|tojson|safe }},
+            datasets: [{
+                label: '% of total combined kilometers',
+                data: Object.values({{ google_insights_summary.km_percent_by_mode|tojson|safe }}),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 1)', // You can add more colors or change these based on the number of modes you have.
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(231, 74, 59, 1)',
+                    'rgba(60, 179, 113, 1)',
+                    // ... add more colors as needed
+                ]
+            }]
+        };
+
+        chartTitle = '{{ year_filter }}' === 'all' 
+                        ? '% of Total Combined Kilometers by Mode' 
+                        : '% of Total Combined Kilometers by Mode for ' + '{{ year_filter }}';
+
+        let pieChartKmByMode = new Chart(ctxKmByMode, {
+            type: 'pie',
+            data: dataForKmByMode,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: chartTitle
+                    },
+                    tooltip: {
+                        enabled: true  // Enable the default on-canvas tooltip
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        let ctxEmissionsByMode = document.getElementById('pieChartEmissionsByMode').getContext('2d');
+        
+        let dataForEmissionsByMode = {
+            labels: {{ google_insights_summary.unique_modes|tojson|safe }},
+            datasets: [{
+                label: '% of total combined emissions',
+                data: Object.values({{ google_insights_summary.emissions_percent_by_mode|tojson|safe }}),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 1)', 
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(231, 74, 59, 1)',
+                    'rgba(60, 179, 113, 1)',
+                    // ... add more colors as needed
+                ]
+            }]
+        };
+
+        // Check if the selected year is 'all' or a specific year, and set the chart title accordingly
+        chartTitle = '{{ year_filter }}' === 'all' 
+                        ? '% of Total Combined Emissions by Mode' 
+                        : '% of Total Combined Emissions by Mode for ' + '{{ year_filter }}';
+
+        let pieChartEmissionsByMode = new Chart(ctxEmissionsByMode, {
+            type: 'pie',
+            data: dataForEmissionsByMode,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: chartTitle
+                    },
+                    tooltip: {
+                        enabled: true  // Enable the default on-canvas tooltip
+                    }
+                }
+            }
+        });
+    </script>
+
+    
 
     {% else %}
     <p>No data uploaded yet. Please upload the Google Insights Explorer data CSV file.</p>
