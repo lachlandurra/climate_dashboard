@@ -810,29 +810,29 @@ def create_app():
                 year_filter = 'all'
 
             # Ensuring existence of required columns
-            required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
+            required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'gpc_distance_km', 'gpc_co2e_tons']
             if not all(column in df.columns for column in required_columns):
                 return {}
             df = df[df['travel_bounds'] != 'TOTAL']
 
             # CO2 emissions each year, broken down by mode of transport
-            emissions_by_year_mode = df.groupby(['year', 'mode'])['full_co2e_tons'].sum().unstack().fillna(0)
+            emissions_by_year_mode = df.groupby(['year', 'mode'])['gpc_co2e_tons'].sum().unstack().fillna(0)
 
             # Average emissions per trip for each mode of transport
-            avg_emissions_per_trip = (df.groupby('mode')['full_co2e_tons'].sum() / df.groupby('mode')['trips'].sum()).fillna(0)
+            avg_emissions_per_trip = (df.groupby('mode')['gpc_co2e_tons'].sum() / df.groupby('mode')['trips'].sum()).fillna(0)
 
             # Emissions data by travel bounds
-            emissions_by_bounds = df.groupby('travel_bounds')['full_co2e_tons'].sum()
+            emissions_by_bounds = df.groupby('travel_bounds')['gpc_co2e_tons'].sum()
 
             # CO2 emissions per kilometer for each mode of transport
-            emissions_per_km = (df.groupby('mode')['full_co2e_tons'].sum() / df.groupby('mode')['full_distance_km'].sum()).fillna(0)
+            emissions_per_km = (df.groupby('mode')['gpc_co2e_tons'].sum() / df.groupby('mode')['gpc_distance_km'].sum()).fillna(0)
 
             summary = {
                 'emissions_by_year_mode': emissions_by_year_mode.to_dict(),
                 'avg_emissions_per_trip': avg_emissions_per_trip.to_dict(),
                 'emissions_by_bounds': emissions_by_bounds.to_dict(),
                 'emissions_per_km': emissions_per_km.to_dict(),
-                'zero_emission_modes': df[df['full_co2e_tons'] == 0]['mode'].unique().tolist()  # Modes like cycling, walking contributing zero emissions
+                'zero_emission_modes': df[df['gpc_co2e_tons'] == 0]['mode'].unique().tolist()  # Modes like cycling, walking contributing zero emissions
             }
 
             first_year_modes = list(next(iter(summary['emissions_by_year_mode'].values())).keys())
@@ -842,31 +842,31 @@ def create_app():
             })
 
                     # Yearly emissions
-            yearly_emissions = df.groupby('year')['full_co2e_tons'].sum().to_dict()
+            yearly_emissions = df.groupby('year')['gpc_co2e_tons'].sum().to_dict()
 
             # Percent of total transportation emissions
-            total_emissions = df['full_co2e_tons'].sum()
-            emissions_percent_by_bounds = (df.groupby('travel_bounds')['full_co2e_tons'].sum() / total_emissions * 100).to_dict()
+            total_emissions = df['gpc_co2e_tons'].sum()
+            emissions_percent_by_bounds = (df.groupby('travel_bounds')['gpc_co2e_tons'].sum() / total_emissions * 100).to_dict()
 
             # Percent of total kilometers traveled
-            total_km = df['full_distance_km'].sum()
-            km_percent_by_bounds = (df.groupby('travel_bounds')['full_distance_km'].sum() / total_km * 100).to_dict()
+            total_km = df['gpc_distance_km'].sum()
+            km_percent_by_bounds = (df.groupby('travel_bounds')['gpc_distance_km'].sum() / total_km * 100).to_dict()
 
             # Total combined number of trips per year
             total_trips_by_year = df.groupby('year')['trips'].sum().to_dict()
 
             # Total combined vehicle kilometers traveled per year
-            total_vehicle_km_by_year = df.groupby('year')['full_distance_km'].sum().to_dict()
+            total_vehicle_km_by_year = df.groupby('year')['gpc_distance_km'].sum().to_dict()
 
-            total_vehicle_km_by_mode = df.groupby('mode')['full_distance_km'].sum().to_dict()
+            total_vehicle_km_by_mode = df.groupby('mode')['gpc_distance_km'].sum().to_dict()
 
 
             # Percent of total combined kilometers by mode
-            km_percent_by_mode = (df.groupby('mode')['full_distance_km'].sum() / total_km * 100).to_dict()
-            emissions_percent_by_mode = (df.groupby('mode')['full_co2e_tons'].sum() / total_emissions * 100).to_dict()
+            km_percent_by_mode = (df.groupby('mode')['gpc_distance_km'].sum() / total_km * 100).to_dict()
+            emissions_percent_by_mode = (df.groupby('mode')['gpc_co2e_tons'].sum() / total_emissions * 100).to_dict()
 
             # Emissions by travel bounds and year
-            emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['full_co2e_tons'].sum().unstack().fillna(0).to_dict()
+            emissions_by_bounds_year = df.groupby(['travel_bounds', 'year'])['gpc_co2e_tons'].sum().unstack().fillna(0).to_dict()
 
             unique_years = df['year'].unique().tolist()
 
@@ -874,7 +874,7 @@ def create_app():
             total_trips_by_mode_year = df.groupby(['mode', 'year'])['trips'].sum().unstack().fillna(0).to_dict()
 
             # Total kilometers by mode and year
-            total_km_by_mode_year = df.groupby(['mode', 'year'])['full_distance_km'].sum().unstack().fillna(0).to_dict()
+            total_km_by_mode_year = df.groupby(['mode', 'year'])['gpc_distance_km'].sum().unstack().fillna(0).to_dict()
 
             unique_modes = df['mode'].unique().tolist()
 
