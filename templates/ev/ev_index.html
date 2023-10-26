@@ -26,9 +26,16 @@
         <div class="backlog-container backlog2">
             <h2>VISTA Data</h2>
             <form action="{{ url_for('upload_vista') }}" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" accept=".csv">
-                <input type="submit" value="Upload CSV" class="global-btn">
+                <input type="file" name="file">
+                <button type="submit" class="global-btn">Upload CSV</button>
             </form>
+
+            <!-- Data summary -->
+            <a href="{{ url_for('vista_summary') }}" class="global-btn">Data Summary</a>
+
+            <form action="{{ url_for('clear_vista') }}" method="POST">
+                <button type="submit" class="global-btn">Clear Data</button>
+            </form>           
         </div> 
     </div>
     <div class="backlogs">

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% macro format_number(value) %}
+  {{ "{:,.2f}".format(value|float) }}
+{% endmacro %}
+
+<div class="backlog-container">
+    {% if vista_summary %}
+    
+    <div class="one">
+        <h1>VISTA Data Summary</h1>
+    </div>
+
+    <div class="graph-container">
+
+        <div style="display: flex; gap: 20px;">
+            <div class="chart-container">
+                <canvas id="pieChartModeShareTrips"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="pieChartModeShareDistance"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="pieChartModeShareTime"></canvas>
+            </div>
+        </div>
+
+        <div class="simple-heading">Total Number of Trips</div>
+        <p>{{ format_number(vista_summary.total_number_of_trips) }}</p>
+
+        <div class="simple-heading">Total Distance (km)</div>
+        <p>{{ format_number(vista_summary.total_distance) }}</p>
+
+        <div class="simple-heading">Total Time (min)</div>
+        <p>{{ format_number(vista_summary.total_time) }}</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- JS for Chart.js plots. Note: You'll need to integrate Chart.js library for this. -->
+    <script>
+
+        const modesToPrint = {{ vista_summary.unique_modes | tojson }};
+        const valuesToPrint = {{ vista_summary.mode_share_trips.values() | list | tojson }};
+        
+        for (let i = 0; i < modesToPrint.length; i++) {
+            console.log(`Mode: ${modesToPrint[i]}, Value: ${valuesToPrint[i]}%`);
+        }
+        
+        new Chart(document.getElementById("pieChartModeShareTrips"), {
+            type: 'pie',
+            data: {
+                labels: {{ vista_summary.unique_modes | tojson }},
+                datasets: [{
+                    data: {{ vista_summary.mode_share_trips.values() | list | tojson }}
+                    //backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']  // Add more colors if there are more modes
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Mode Share by Number of Trips (%)'
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById("pieChartModeShareDistance"), {
+            type: 'pie',
+            data: {
+                labels: {{ vista_summary.unique_modes | tojson }},
+                datasets: [{
+                    data: {{ vista_summary.mode_share_distance.values() | list | tojson }},
+                    //backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Mode Share by Distance (%)'
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById("pieChartModeShareTime"), {
+            type: 'pie',
+            data: {
+                labels: {{ vista_summary.unique_modes | tojson }},
+                datasets: [{
+                    data: {{ vista_summary.mode_share_time.values() | list | tojson }},
+                    //backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Mode Share by Time (%)'
+                    }
+                }
+            }
+            
+        });
+    </script>
+
+    {% else %}
+        <p>No data available.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+≈

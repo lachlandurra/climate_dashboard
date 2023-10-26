@@ -49,6 +49,8 @@
             backButton.href = '{{ url_for('esd_index') }}';
         {% elif request.endpoint == 'ev_index' %}
             backButton.href = '{{ url_for('index') }}';
+        {% elif request.endpoint in ['upload_google_insights', 'google_insights_summary', 'clear_google_insights', 'upload_vista', 'vista_summary', 'clear_vista', 'upload_evie', 'filtered_data'] %}
+            backButton.href = '{{ url_for('ev_index') }}';
         {% endif %}
 
         // Append the back button below the nav bar

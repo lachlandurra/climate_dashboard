@@ -26,8 +26,7 @@
     </div>    
 
     <div class="graph-container">
-        {% if year_filter == 'all' %}
-            <canvas id="lineGraphAllModes" class="chart-max-width"></canvas>
+        {% if google_insights_summary.year_filter == 'all' %}
             <canvas id="lineGraphByMode" class="chart-max-width"></canvas>
             <canvas id="columnGraphYearly" class="chart-max-width"></canvas>
         {% endif %}
@@ -350,71 +349,11 @@
     </script>
 
     <script>
-        let ctx = document.getElementById('lineGraphAllModes').getContext('2d');
-        let dataForAllModes = {
-            labels: {{ google_insights_summary.unique_years|tojson|safe }},  // Years as the labels
-            datasets: [{
-                label: 'Emissions',
-                data: Object.values({{ google_insights_summary.yearly_emissions|tojson|safe }}), // Extracting values from the yearly emissions dictionary
-                borderColor: 'rgba(75, 192, 192, 1)',
-                fill: false
-            }]
-        };
-
-        let lineGraphAllModes = new Chart(ctx, {
-            type: 'line',
-            data: dataForAllModes,
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Total emissions over time'
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Year'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Emissions'
-                        }
-                    }
-                },
-                tooltips: {
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            // Get mode based on the tooltipItem
-                            let mode = data.labels[tooltipItem.index];
-                            
-                            // Assuming you have additional details in the dataset (you can add custom properties)
-                            let trips = data.datasets[tooltipItem.datasetIndex].trips[tooltipItem.index];
-                            let distance = data.datasets[tooltipItem.datasetIndex].distance[tooltipItem.index];
-
-                            return [
-                                'Mode: ' + mode,
-                                'Total Trips: ' + trips,
-                                'Total Distance: ' + distance
-                            ];
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-
-    <script>
         let ctxByMode = document.getElementById('lineGraphByMode').getContext('2d');
         let datasetsByMode = [];
         let colors = ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 205, 86, 1)', 'rgba(54, 162, 235, 1)'];  // Example colors
         
+        // Existing loop for emissions by mode
         {% for mode, emissions in google_insights_summary.emissions_by_year_mode.items() %}
             datasetsByMode.push({
                 label: "{{ mode }}",
@@ -423,6 +362,15 @@
                 fill: false
             });
         {% endfor %}
+
+        // Adding total yearly emissions
+        datasetsByMode.push({
+            label: "Total Emissions",
+            data: Object.values({{ google_insights_summary.yearly_emissions|tojson|safe }}),
+            borderColor: 'rgba(0, 0, 0, 1)',  // Use black or any other distinct color for total emissions
+            fill: false
+        });
+
 
         let dataForByModeChart = {
             labels: {{ google_insights_summary.unique_years|tojson|safe }},
@@ -520,9 +468,9 @@
             }]
         };
 
-        chartTitle = '{{ year_filter }}' === 'all' 
+        chartTitle = '{{ google_insights_summary.year_filter }}' === 'all' 
                         ? 'Emissions by Inbound, Outbound, In-boundary' 
-                        : 'Emissions by Inbound, Outbound, In-boundary for ' + '{{ year_filter }}';
+                        : 'Emissions by Inbound, Outbound, In-boundary for ' + '{{ google_insights_summary.year_filter }}';
 
         let pieChartEmissionsByBounds = new Chart(ctxEmissionsByBounds, {
             type: 'pie',
@@ -549,9 +497,9 @@
             }]
         };
 
-        chartTitle = '{{ year_filter }}' === 'all' 
+        chartTitle = '{{ google_insights_summary.year_filter }}' === 'all' 
                         ? 'Vehicle Kilometers by Inbound, Outbound, In-boundary' 
-                        : 'Vehicle Kilometers by Inbound, Outbound, In-boundary for ' + '{{ year_filter }}';
+                        : 'Vehicle Kilometers by Inbound, Outbound, In-boundary for ' + '{{ google_insights_summary.year_filter }}';
 
         let pieChartKmByBounds = new Chart(ctxKmByBounds, {
             type: 'pie',
@@ -589,9 +537,9 @@
             }]
         };
 
-        chartTitle = '{{ year_filter }}' === 'all' 
+        chartTitle = '{{ google_insights_summary.year_filter }}' === 'all' 
                         ? '% of Total Combined Kilometers by Mode' 
-                        : '% of Total Combined Kilometers by Mode for ' + '{{ year_filter }}';
+                        : '% of Total Combined Kilometers by Mode for ' + '{{ google_insights_summary.year_filter }}';
 
         let pieChartKmByMode = new Chart(ctxKmByMode, {
             type: 'pie',
@@ -633,9 +581,9 @@
         };
 
         // Check if the selected year is 'all' or a specific year, and set the chart title accordingly
-        chartTitle = '{{ year_filter }}' === 'all' 
+        chartTitle = '{{ google_insights_summary.year_filter }}' === 'all' 
                         ? '% of Total Combined Emissions by Mode' 
-                        : '% of Total Combined Emissions by Mode for ' + '{{ year_filter }}';
+                        : '% of Total Combined Emissions by Mode for ' + '{{ google_insights_summary.year_filter }}';
 
         let pieChartEmissionsByMode = new Chart(ctxEmissionsByMode, {
             type: 'pie',

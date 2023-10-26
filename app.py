@@ -13,6 +13,7 @@ from collections import defaultdict
 import pandas as pd
 import os
 import shutil
+from collections import OrderedDict
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
@@ -695,12 +696,118 @@ def create_app():
 
         return redirect(url_for('ev_index'))
 
+   
+    def process_vista_data(filepath, journey_type="WORK"):
+        try:
+            df = pd.read_csv(filepath)
+            
+            # Selecting columns based on journey type
+            mode_col = 'jtwmode' if journey_type == "WORK" else 'jtemode'
+            distance_col = 'jtwdist' if journey_type == "WORK" else 'jtedist'
+            time_col = 'jtwelapsedtime' if journey_type == "WORK" else 'jteelapsedtime'
+            
+            # Convert elapsed time to hours if data is in minutes
+            df[time_col] = df[time_col] / 60.0
+            
+            # Assuming a default trip value of 1 for each row
+            df['trips'] = 1
+
+            # Mapping current categories to new categories
+            category_mapping = {
+                'Vehicle Driver': 'Private Vehicle',
+                'Train': 'Public Transport',
+                'Vehicle Passenger': 'Private Vehicle',
+                'Motorcycle': 'Private Vehicle',
+                'Public Bus': 'Public Transport',
+                'Walking': 'Walking',
+                'Bicycle': 'Bicycle',
+                'Tram': 'Public Transport',
+                'Taxi': 'Private Vehicle',
+                'Other': 'Other Modes',
+                'Jogging': 'Other Modes'
+            }
+            
+            df[mode_col] = df[mode_col].map(category_mapping)
+            
+            # Mode share by number of trips (%)
+            total_trips = df['trips'].sum()
+            # Mode share by number of trips (%)
+            mode_share_trips = OrderedDict()
+            grouped_trips = df.groupby(mode_col)['trips'].sum()
+            for mode in df[mode_col].unique():
+                mode_share_trips[mode] = (grouped_trips[mode] / total_trips * 100)
+
+            # Number of trips
+            total_number_of_trips = df['trips'].sum()
+
+            # Number of km
+            total_distance = df[distance_col].sum()
+
+            # Number of hours
+            total_time = df[time_col].sum()
+            print(total_time)
+
+            # Mode share by distance (%)
+            total_distance = df[distance_col].sum()
+
+            # mode_share_distance = (df.groupby(mode_col)[distance_col].sum() / total_distance * 100).to_dict()
+            mode_share_distance = OrderedDict()
+            grouped_distance = df.groupby(mode_col)[distance_col].sum()
+            for mode in df[mode_col].unique():
+                mode_share_distance[mode] = (grouped_distance[mode] / total_distance * 100)
+
+            # Mode share by time (%)
+            total_time = df[time_col].sum()
+            # mode_share_time = (df.groupby(mode_col)[time_col].sum() / total_time * 100).to_dict()
+            mode_share_time = OrderedDict()
+            grouped_time = df.groupby(mode_col)[time_col].sum()
+            for mode in df[mode_col].unique():
+                mode_share_time[mode] = (grouped_time[mode] / total_time * 100)
+
+            summary = {
+                'mode_share_trips': mode_share_trips,
+                'total_number_of_trips': total_number_of_trips,
+                'mode_share_distance': mode_share_distance,
+                'mode_share_time': mode_share_time,
+                'unique_modes': df[mode_col].unique().tolist(),
+                'total_distance': total_distance,
+                'total_time': total_time
+            }
+
+            return summary
+        except Exception as e:
+            print("Error inside process_vista_data:", e)
+            return {}
+    
+    @app.route('/filtered_data', methods=['GET'])
+    def filtered_data():
+        year_filter = request.args.get('year_filter', 'all')
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
+        
+        if os.path.exists(file_path):
+            # Load the entire dataset to get unique years
+            df_all = pd.read_csv(file_path)
+            unique_years_all = df_all['year'].unique().tolist()
+
+            # Load the filtered dataset for the summary
+            summary = process_google_insights_data(file_path, year_filter)
+
+            # Overwrite unique_years in summary with the list computed from entire dataset
+            summary['unique_years'] = unique_years_all
+            
+            return render_template('ev/google_insights_summary.html', google_insights_summary=summary, year_filter=year_filter)
+        else:
+            flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
+            return redirect(url_for('ev_index'))
+        
     def process_google_insights_data(filepath, year_filter='all'):
         try:
             df = pd.read_csv(filepath)
 
             if year_filter != 'all':
                 df = df[df['year'] == int(year_filter)]
+            else:
+                year_filter = 'all'
 
             # Ensuring existence of required columns
             required_columns = ['year', 'mode', 'travel_bounds', 'trips', 'full_distance_km', 'full_co2e_tons']
@@ -785,36 +892,17 @@ def create_app():
                 'total_km_by_mode_year': total_km_by_mode_year,
                 'total_vehicle_km_by_mode': total_vehicle_km_by_mode,
                 'unique_modes': unique_modes,
-                'emissions_percent_by_mode': emissions_percent_by_mode
+                'emissions_percent_by_mode': emissions_percent_by_mode,
+                'year_filter': year_filter
             })
 
             # print(summary)
+            print(year_filter)
 
             return summary
         except Exception as e:
             print("Error inside process_google_insights_data:", e)
             return {}
-
-    @app.route('/filtered_data', methods=['GET'])
-    def filtered_data():
-        year_filter = request.args.get('year_filter', 'all')
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
-        
-        if os.path.exists(file_path):
-            # Load the entire dataset to get unique years
-            df_all = pd.read_csv(file_path)
-            unique_years_all = df_all['year'].unique().tolist()
-
-            # Load the filtered dataset for the summary
-            summary = process_google_insights_data(file_path, year_filter)
-
-            # Overwrite unique_years in summary with the list computed from entire dataset
-            summary['unique_years'] = unique_years_all
-            
-            return render_template('ev/google_insights_summary.html', google_insights_summary=summary, year_filter=year_filter)
-        else:
-            flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
-            return redirect(url_for('ev_index'))
 
 
     @app.route('/google_insights_summary', methods=['GET'])
@@ -827,22 +915,22 @@ def create_app():
         else:
             flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
             return redirect(url_for('ev_index'))
+        
+    @app.route('/vista_summary', methods=['GET'])
+    def vista_summary():
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'vista_data.csv')
+
+        if os.path.exists(file_path):
+            summary = process_vista_data(file_path)
+            return render_template('ev/vista_summary.html', vista_summary=summary)
+        else:
+            flash('No data uploaded yet. Please upload the VISTA data CSV file.')
+            return redirect(url_for('ev_index'))
 
 
     @app.route('/ev_index')
     def ev_index():
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
-
-        google_insights_summary = None
-        
-        if os.path.exists(filepath):
-            # If file exists, process the data and display the summary
-            try:
-                google_insights_summary = process_google_insights_data(filepath)
-            except Exception as e:
-                print("Error processing the data:", e)  # Print error to console for debugging
-
-        return render_template('ev/ev_index.html', google_insights_summary=google_insights_summary)
+        return render_template('ev/ev_index.html')
     
 
     def allowed_file(filename):
@@ -852,19 +940,32 @@ def create_app():
     def upload_vista():
         if 'file' not in request.files:
             flash('No file part')
-            return redirect(request.referrer)
-        
+            return redirect(request.url)
+
         file = request.files['file']
 
         if file.filename == '':
             flash('No selected file')
-            return redirect(request.referrer)
-        
-        if file:
-            df = pd.read_csv(file)
-            # TODO: Add your logic here to process the data frame as needed
-            flash('VISTA data uploaded successfully!')
+            return redirect(request.url)
+
+        if file and allowed_file(file.filename):
+            # Always save to the same file name to ensure only one file is saved
+            filename = os.path.join(app.config['UPLOAD_FOLDER'], 'vista_data.csv')
+            file.save(filename)
+
             return redirect(url_for('ev_index'))
+
+        return redirect(url_for('ev_index'))
+
+    @app.route('/clear_vista', methods=['POST'])
+    def clear_vista():
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'vista_data.csv')
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+        return redirect(url_for('ev_index'))
+
 
     @app.route('/upload_evie', methods=['POST'])
     def upload_evie():
