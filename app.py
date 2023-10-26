@@ -44,7 +44,20 @@ def create_app():
     
     @app.route('/esd_index')
     def esd_index():
-        return render_template('esd/esd_index.html')
+        emission_factors = EmissionFactor.query.all()
+
+        # Dictionary to store total emissions reduction per year
+        total_emissions_reduction_per_year = {}
+
+        for ef in emission_factors:
+            year = ef.year
+            # Get all the EnergyRatingData records for the current emission factor's year
+            energy_data_for_year = EnergyRatingData.query.filter_by(emission_factor_id=ef.id).all()
+            total_reduction = sum(data.emissions_reduction for data in energy_data_for_year if data.emissions_reduction is not None)
+            total_emissions_reduction_per_year[year] = total_reduction
+
+        return render_template('esd/esd_index.html', emission_factors=emission_factors, total_emissions_reduction=total_emissions_reduction_per_year)
+
     
     @app.route('/api/all_reporting_periods', methods=['GET'])
     def all_reporting_periods():
@@ -530,12 +543,18 @@ def create_app():
             year = request.form['year']
             factor = request.form['factor']
 
-            # Create new EmissionFactor object
-            emission_factor = EmissionFactor(year=year, factor=factor)
+            # Check for existing emission factor for the year
+            existing_factor = EmissionFactor.query.filter_by(year=year).first()
 
-            db.session.add(emission_factor)
+            if existing_factor:
+                # Update the factor if it exists
+                existing_factor.factor = factor
+            else:
+                # Create a new entry if it doesn't
+                emission_factor = EmissionFactor(year=year, factor=factor)
+                db.session.add(emission_factor)
+            
             db.session.commit()
-
             return redirect(url_for('view_energy_rating_data'))
 
         return render_template('esd/enter_emission_factors_data.html')
@@ -637,12 +656,15 @@ def create_app():
         for item in data:
             year = item.year
             class_ = item.class_
+            emissions = item.emissions_reduction
             mj_saved = item.mj_saved_per_annum
             half_year = item.half_year
+            star_rating = item.star_rating
             id_ = item.id
 
             if mj_saved is not None:
-                organized_data[year][class_][half_year].append((mj_saved, id_))
+                emissions_to_add = emissions if emissions is not None else 0
+                organized_data[year][class_][half_year].append((mj_saved, id_, star_rating, emissions_to_add))
 
 
         # Calculating the average MJ saved per annum for each class per year
@@ -651,16 +673,21 @@ def create_app():
         for year, classes in organized_data.items():
             for class_, half_years in classes.items():
                 for half_year, mj_saved_list in half_years.items():
-                    if mj_saved_list:
+                    # Add the emissions as well as the mj
+                    if mj_saved_list:   
                         avg_mj_saved = sum([item[0] for item in mj_saved_list]) / len(mj_saved_list)
+                        avg_emissions = sum([item[3] for item in mj_saved_list]) / len(mj_saved_list)
                         id_ = mj_saved_list[0][1]  # Here, extract the id from the first tuple in the list (adjust as needed)
+                        star_rating = mj_saved_list[0][2]
 
                         results.append({
                             "year": year,
                             "class": class_,
                             "avg_mj_saved_per_annum": avg_mj_saved,
+                            "avg_emissions_reduction": avg_emissions,
                             "half_year": half_year,
-                            "id": id_  # Here, added the id to the result dictionary
+                            "id": id_,  # Here, added the id to the result dictionary
+                            "star_rating": star_rating
                         })
 
 
@@ -696,7 +723,6 @@ def create_app():
 
         return redirect(url_for('ev_index'))
 
-   
     def process_vista_data(filepath, journey_type="WORK"):
         try:
             df = pd.read_csv(filepath)
@@ -904,7 +930,6 @@ def create_app():
             print("Error inside process_google_insights_data:", e)
             return {}
 
-
     @app.route('/google_insights_summary', methods=['GET'])
     def google_insights_summary():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'google_insights.csv')
@@ -927,12 +952,10 @@ def create_app():
             flash('No data uploaded yet. Please upload the VISTA data CSV file.')
             return redirect(url_for('ev_index'))
 
-
     @app.route('/ev_index')
     def ev_index():
         return render_template('ev/ev_index.html')
     
-
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -965,7 +988,6 @@ def create_app():
             os.remove(filepath)
 
         return redirect(url_for('ev_index'))
-
 
     @app.route('/upload_evie', methods=['POST'])
     def upload_evie():

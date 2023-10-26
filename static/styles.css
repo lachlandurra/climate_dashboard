@@ -693,6 +693,11 @@ th {
     align-items: center;
 }
 
+.data-table.custom-width {
+    width: auto;  /* or whatever width you prefer instead of 100% */
+}
+
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -758,13 +763,6 @@ canvas {
 .chart-max-width {
     max-width: 800px;
 }
-
-/* form {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-} */
 
 select {
     padding: 8px 12px;

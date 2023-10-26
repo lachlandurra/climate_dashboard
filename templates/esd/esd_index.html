@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+{% macro format_number(value) %}
+  {{ "{:,.0f}".format(value|float) }}
+{% endmacro %}
+
 <div class="home-container">
     <div class="welcome-text">
         Welcome to the Low Carbon Living Data Dashboard!
@@ -21,7 +26,23 @@
     <div class="backlogs">
 
         <div class="backlog-container">
-            <h2>Enter Emissions Factors Data</h2>
+            <h2>Emissions Factors Data</h2>
+            <table class="data-table custom-width">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Emissions Factor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ef in emission_factors %}
+                    <tr>
+                        <td>{{ ef.year }}</td>
+                        <td>{{ ef.factor }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             <a href="{{ url_for('enter_emission_factors_data') }}" class="global-btn">Enter Emissions Factors</a>
         </div>
 
@@ -33,12 +54,335 @@
     </div>
         <!-- Emissions By Period div -->
         <div class="backlog-container">
-            <h2>General Emissions Graphs</h2>
-            <div id="mjSavedOverTime"></div>
+            <h2>General Emissions Graphs</h2> 
+            <div style="display: flex; gap: 20px;">
+                <div class="data-table-container">
+                    <div class="simple-heading">Emissions Reduction Per Year</div>
+                    <table class="data-table custom-width">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Total Emissions Reduction (tCO2e)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ef in emission_factors %}
+                            <tr>
+                                <td>{{ ef.year }}</td>
+                                <td>{{ format_number(total_emissions_reduction[ef.year]) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <canvas id="emissionsOverTimeChartJS" width="400" height="200"></canvas> <!-- Chart.js canvas -->    
+            <canvas id="mjSavedOverTimeChartJS" width="400" height="200"></canvas> <!-- Chart.js canvas -->  
+            <canvas id="starRatingsOverTimeChartJS" width="400" height="200"></canvas> <!-- Chart.js canvas --> 
         </div>
         
 
 </div>
 
 <script src="{{ url_for('static', filename='esd_graphs.js') }}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async function() {
+        const response = await fetch('/api/mj_saved_per_annum_over_time');  // Adjust the URL as needed
+        const data = await response.json();
+
+        data.sort((a, b) => a.year - b.year);
+        
+        // Find the range of years present in the data
+        let minYear = Infinity;
+        let maxYear = -Infinity;
+
+        data.forEach(entry => {
+            if (entry.year < minYear) minYear = entry.year;
+            if (entry.year > maxYear) maxYear = entry.year;
+        });
+
+        // Generate labels for each year in the range, always including both H1 and H2
+        let labels = [];
+        for (let year = minYear; year <= maxYear; year++) {
+            labels.push(`${year} H1`);
+            labels.push(`${year} H2`);
+        }
+
+        // Create empty data arrays filled with null values
+        let class1Data = new Array(labels.length).fill(null);
+        let class2Data = new Array(labels.length).fill(null);
+
+        // Populate the data points based on the data
+        data.forEach(entry => {
+            let index = labels.indexOf(`${entry.year} H${entry.half_year}`);
+            if (index !== -1) {
+                if (entry.class === 1) {
+                    class1Data[index] = entry.avg_mj_saved_per_annum;
+                } else if (entry.class === 2) {
+                    class2Data[index] = entry.avg_mj_saved_per_annum;
+                }
+            }
+        });
+
+        let dataset1 = class1Data;
+        let dataset2 = class2Data;
+        let totalData = dataset1.map((value, index) => {
+            let total = (value || 0) + (dataset2[index] || 0);
+            return total !== 0 ? total : null;
+        });        
+
+        var ctx = document.getElementById('mjSavedOverTimeChartJS').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Class 1',
+                    data: dataset1,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    spanGaps: true
+                }, 
+                {
+                    label: 'Class 2',
+                    data: dataset2,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false,
+                    spanGaps: true
+                },
+                {
+                    label: 'Total',
+                    data: totalData,
+                    borderColor: 'rgba(153, 102, 255, 1)', // choose a different color for the total line
+                    fill: false,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'MJ Saved Per Annum Over Time (Class 1 and 2)'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'MJ Saved Per Annum'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", async function() {
+        const response = await fetch('/api/mj_saved_per_annum_over_time');  // Adjust the URL as needed
+        const data = await response.json();
+
+        data.sort((a, b) => a.year - b.year);
+        
+        // Find the range of years present in the data
+        let minYear = Infinity;
+        let maxYear = -Infinity;
+
+        data.forEach(entry => {
+            if (entry.year < minYear) minYear = entry.year;
+            if (entry.year > maxYear) maxYear = entry.year;
+        });
+
+        // Generate labels for each year in the range, always including both H1 and H2
+        let labels = [];
+        for (let year = minYear; year <= maxYear; year++) {
+            labels.push(`${year} H1`);
+            labels.push(`${year} H2`);
+        }
+
+        // Create empty data arrays filled with null values
+        let class1Data = new Array(labels.length).fill(null);
+        let class2Data = new Array(labels.length).fill(null);
+
+        // Populate the data points based on the data for emissions
+        data.forEach(entry => {
+            let index = labels.indexOf(`${entry.year} H${entry.half_year}`);
+            if (index !== -1) {
+                if (entry.class === 1) {
+                    class1Data[index] = entry.avg_emissions_reduction;
+                } else if (entry.class === 2) {
+                    class2Data[index] = entry.avg_emissions_reduction;
+                }
+            }
+        });
+
+        let dataset1 = class1Data.map(value => value !== 0 ? value : null);
+        let dataset2 = class2Data.map(value => value !== 0 ? value : null);        
+        let totalData = dataset1.map((value, index) => {
+            let total = (value || 0) + (dataset2[index] || 0);
+            return total !== 0 ? total : null;
+        });   
+
+        var ctx = document.getElementById('emissionsOverTimeChartJS').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Class 1',
+                    data: dataset1,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    spanGaps: true
+                }, 
+                {
+                    label: 'Class 2',
+                    data: dataset2,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false,
+                    spanGaps: true
+                },
+                {
+                    label: 'Total',
+                    data: totalData,
+                    borderColor: 'rgba(153, 102, 255, 1)', // choose a different color for the total line
+                    fill: false,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Emissions Reduction Over Time (Class 1 and 2)'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Emissions Reduction'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async function() {
+        const response = await fetch('/api/mj_saved_per_annum_over_time');  // Adjust the URL for fetching star ratings
+        const data = await response.json();
+    
+        data.sort((a, b) => a.year - b.year);
+        
+        // Find the range of years present in the data
+        let minYear = Infinity;
+        let maxYear = -Infinity;
+    
+        data.forEach(entry => {
+            if (entry.year < minYear) minYear = entry.year;
+            if (entry.year > maxYear) maxYear = entry.year;
+        });
+    
+        // Generate labels for each year in the range, always including both H1 and H2
+        let labels = [];
+        for (let year = minYear; year <= maxYear; year++) {
+            labels.push(`${year} H1`);
+            labels.push(`${year} H2`);
+        }
+    
+        // Create empty data arrays filled with null values
+        let class1StarRatings = new Array(labels.length).fill(null);
+        let class2StarRatings = new Array(labels.length).fill(null);
+    
+        // Populate the data points based on the data
+        data.forEach(entry => {
+            let index = labels.indexOf(`${entry.year} H${entry.half_year}`);
+            if (index !== -1) {
+                if (entry.class === 1) {
+                    class1StarRatings[index] = entry.star_rating;  // Adjust property name as needed
+                } else if (entry.class === 2) {
+                    class2StarRatings[index] = entry.star_rating;  // Adjust property name as needed
+                }
+            }
+        });
+    
+        let dataset1Stars = class1StarRatings;
+        let dataset2Stars = class2StarRatings;
+    
+        var ctxStars = document.getElementById('starRatingsOverTimeChartJS').getContext('2d');  // Adjust canvas ID as needed
+        var myStarRatingsChart = new Chart(ctxStars, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Class 1 Star Ratings',
+                    data: dataset1Stars,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    spanGaps: true
+                }, 
+                {
+                    label: 'Class 2 Star Ratings',
+                    data: dataset2Stars,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Star Ratings Over Time (Class 1 and 2)'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        min: 5.9,
+                        title: {
+                            display: true,
+                            text: 'Star Rating'
+                        },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    });
+    
+</script>
+    
+
 {% endblock %}
