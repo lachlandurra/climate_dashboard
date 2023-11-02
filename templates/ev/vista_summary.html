@@ -81,6 +81,8 @@
     <!-- JS for Chart.js plots. Note: You'll need to integrate Chart.js library for this. -->
     <script>
 
+        console.log({{ vista_summary.unique_modes | tojson }})
+
         const modesToPrint = {{ vista_summary.unique_modes | tojson }};
         const valuesToPrint = {{ vista_summary.mode_share_trips.values() | list | tojson }};
         
