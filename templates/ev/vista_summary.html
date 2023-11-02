@@ -7,10 +7,40 @@
 {% endmacro %}
 
 <div class="backlog-container">
+
     {% if vista_summary %}
     
     <div class="one">
         <h1>VISTA Data Summary</h1>
+    </div>
+
+    <div class="help">
+  
+        <div class="question">?</div>
+      
+        <div class="popup">
+            <h3>What is this data?</h3>
+            <p>The Victorian Integrated Survey of Travel and Activity (VISTA) assesses household travel and activity and is conducted every two years by the Department of Transport and Planning in Victoria, 
+                Australia. It collects data on how, why, when and where people travel in Victoria, and how they spend their time.</p>
+            <p>The survey helps the government make better transport and land-use planning decisions.</p>
+            <p>The survey has been running since 2007, and the latest data available is from March 2022. The survey data and publications can be accessed on the Department of Transport and Planning website or explore the data using an interactive tool.</p>
+            <div class="tell-me">
+                <p>How is the data collected?</p>
+                <div class="popup2">
+                    <h3>How is the data collected?</h3>
+                    <p>The survey is conducted throughout the year across greater Melbourne, and periodically Geelong and other key regional centres. 
+                        Randomly selected households are asked to collect their travel data for a single specified day.</p>
+                    <p>The survey collects information on how, why, when and where people travel, and how they spend their time.</p>
+                    <p>The survey covers all personal travel modes, including walking, cycling, public transport, car, taxi, ridesharing, and interstate travel.</p>
+                    <p>The survey uses a mixed-mode approach, combining online, phone and face-to-face interviews.</p>
+                    <p>The survey also incorporates a GPS component, where some participants are asked to wear a GPS device for a week to capture more accurate travel data.</p>
+                    <p>The survey data is weighted and expanded to represent the population of the surveyed areas.</p>
+                    <p><a href="https://public.tableau.com/app/profile/vista/viz/VISTA-LGAProfilerDraft/LocalGovernmentAreaprofiles" target="_blank">Click here</a> for the VISTA interactive tool</p>
+                    <p><a href="https://discover.data.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity" target="_blank">Click here</a> to download the data</p>
+
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="graph-container">
@@ -27,14 +57,23 @@
             </div>
         </div>
 
-        <div class="simple-heading">Total Number of Trips</div>
-        <p>{{ format_number(vista_summary.total_number_of_trips) }}</p>
-
-        <div class="simple-heading">Total Distance (km)</div>
-        <p>{{ format_number(vista_summary.total_distance) }}</p>
-
-        <div class="simple-heading">Total Time (min)</div>
-        <p>{{ format_number(vista_summary.total_time) }}</p>
+        <div class="simple-heading">Numerical Summary</div>
+            <table class="data-table" style="max-width: 800px;">
+                <thead>
+                    <tr>
+                        <th>Total Number of Trips</th>
+                        <th>Total Distance (km)</th>
+                        <th>Total Time (min)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ vista_summary.total_number_of_trips }}</td>
+                        <td>{{ format_number(vista_summary.total_distance) }}</td>
+                        <td>{{ format_number(vista_summary.total_time) }}</td>
+                    </tr>
+                </tbody>
+            </table>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -118,4 +157,22 @@
 
 {% endblock %}
 
-≈
+<script>
+    const modal = document.getElementById("helpModal");
+    const btn = document.getElementById("helpButton");
+    const span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>

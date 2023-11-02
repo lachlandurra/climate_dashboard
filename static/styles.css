@@ -795,3 +795,142 @@ button[type="submit"]:hover {
     align-items: center;  /* Vertically align the button and select box */
     gap: 10px;  /* Provides a little spacing between the select box and the button */
 }
+
+.help {
+    width: 40px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.help .question {
+    height: 40px;
+    width: 40px;
+    background: #ccc;
+    font-size: 32px;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.help .popup, .help .popup2 {
+    width: 760px;
+    text-align: left;
+    /* overflow: hidden; */
+    position: absolute;
+    background: #eee;
+    opacity: 0;
+    transition: opacity 1s;
+    visibility: hidden; /* Add visibility */
+}
+
+.help .popup {
+    left: -360px;
+    top: 40px;  /* Make sure the popup starts directly below the question mark */
+    padding-top: 5px;
+}
+
+
+/* Add top value for popup2 */
+.help .popup2 {
+    top: 45px;
+    height: auto;  /* Let's make the height adjust based on content */
+    overflow: hidden;   /* To hide overflowing content */
+    transition: max-height 0.5s;  /* Smoother transition */
+}
+
+.help .tell-me:hover .popup2 {
+    max-height: 1200px;  /* Adjust this value to desired expanded height */
+}
+
+.help::before {
+    content: "";
+    position: absolute;
+    left: 50%; /* Center it horizontally */
+    top: 40px; /* Position right below the question */
+    height: 80px; /* Approximate height of the gap, adjust if necessary */
+    width: 40px; /* Same width as the question */
+    background: transparent;
+    z-index: -1; /* Place it behind other elements */
+}
+
+.help .popup2 h4 {
+    font-size: 18px;
+    padding: 10px;
+    margin: 0;
+}
+
+
+.help:hover .popup {
+    opacity: 1;
+    visibility: visible; /* Adjust visibility on hover */
+}
+
+.help:hover .tell-me:hover .popup2 {
+    top: 0;
+    opacity: 1;
+    visibility: visible;
+}
+
+.help .tell-me p:first-child {
+    color: #317eac;
+    cursor: pointer;
+}
+
+.tell-me {
+    width: 250px;
+}
+
+.help .tell-me:hover .popup2 {
+    top: 0;
+    opacity: 1;
+    visibility: visible;
+}
+
+.help .popup h3 {
+    margin: 0;
+    padding: 10px 0 0 10px;
+    height: 40px;
+    background: #555;
+    color: #fff;
+    font-weight: 400;
+    font-size: 18px;
+}
+
+.help .popup p {
+    font-size: 16px;
+    padding: 10px;
+    margin: 0;
+}
+
+.help .popup .popup2 .sub-levels {
+    padding: 0 0 10px 140px;
+}
+
+.help .popup .popup2 .sub-levels strong {
+    font-size: 20px;
+    color: #009879;
+}
+
+.help .popup p strong {
+    font-weight: bold;
+    color: red;
+}
+
+
+.help .popup .popup2 p:nth-child(5) {
+    padding: 20px 0 0 10px;
+}
+
+.help .popup a {
+    text-decoration: none;
+    color: #317eac;
+}
+
+.help .popup a:visited {
+    color: #317eac;
+}
+
+.help .popup p em {
+    font-size: 12px;
+}
