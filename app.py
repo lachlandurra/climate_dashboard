@@ -16,12 +16,281 @@ import shutil
 from collections import OrderedDict
 import requests
 import urllib3
+from multiprocessing import Pool
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # Move the app creation into a factory function.
 db = SQLAlchemy()
 migrate = Migrate()
+
+
+
+def process_single_vista_data(journey_type):
+    try:
+        df = fetch_vista_data(journey_type)
+        if df.empty:
+            print("No data fetched from API.")
+            return {}
+        
+        mode_col_mapping = {
+            "WORK": 'jtwmode',
+            "EDUCATION": 'jtemode',
+            "STOPS": 'mainmode',
+            "TRIPS": 'linkmode'
+        }
+
+        mode_col = mode_col_mapping.get(journey_type)
+
+        dist_col_mapping = {
+            "WORK": 'jtwdist',
+            "EDUCATION": 'jtedist',
+            "STOPS": 'vistadist',
+            "TRIPS": 'cumdist'
+        }
+
+        distance_col = dist_col_mapping.get(journey_type)
+
+        time_col_mapping = {
+            "WORK": 'jtwelapsedtime',
+            "EDUCATION": 'jteelapsedtime',
+            "STOPS": 'travtime',
+            "TRIPS": 'travtime'
+        }
+
+        time_col = time_col_mapping.get(journey_type)
+
+        df[time_col] = pd.to_numeric(df[time_col], errors='coerce')
+        df[distance_col] = pd.to_numeric(df[distance_col], errors='coerce')
+
+        df.dropna(subset=[time_col, distance_col, mode_col], inplace=True)
+        
+        # Convert elapsed time to hours if data is in minutes
+        df[time_col] = df[time_col] / 60.0
+        
+        # Assuming a default trip value of 1 for each row
+        df['trips'] = 1
+
+        # Mapping current categories to new categories
+        category_mapping = {
+            'Vehicle Driver': 'Private Vehicle',
+            'Train': 'Public Transport',
+            'Vehicle Passenger': 'Private Vehicle',
+            'Motorcycle': 'Private Vehicle',
+            'Public Bus': 'Public Transport',
+            'Walking': 'Walking',
+            'Bicycle': 'Bicycle',
+            'Tram': 'Public Transport',
+            'Taxi': 'Private Vehicle',
+            'Other': 'Other Modes',
+            'Jogging': 'Other Modes',
+            'School Bus': 'Private Vehicle',
+            'Mobility Scooter': 'Other Modes'
+        }
+
+        print("Before mode mapping:")
+        print(df[mode_col].value_counts(dropna=False))
+
+        df[mode_col] = df[mode_col].map(category_mapping)
+
+        print("After mode mapping:")
+        print(df[mode_col].value_counts(dropna=False))
+
+        # Mode share by number of trips (%)
+        total_trips = df['trips'].sum()
+        mode_order = list(category_mapping.values())
+        mode_order = list(dict.fromkeys(mode_order))  # Remove duplicates
+        mode_share_trips = OrderedDict.fromkeys(mode_order, 0)  # Initialize OrderedDict
+
+        if total_trips > 0:
+            grouped_trips = df.groupby(mode_col)['trips'].sum()
+            for mode in mode_order:
+                if mode in grouped_trips:
+                    mode_share_trips[mode] = (grouped_trips[mode] / total_trips * 100)
+
+        # Number of hours
+        total_time = df[time_col].sum()
+
+        # Mode share by time (%)
+        mode_share_time = OrderedDict.fromkeys(mode_order, 0)  # Initialize with fixed order
+
+        if total_time > 0:
+            grouped_time = df.groupby(mode_col)[time_col].sum()
+            for mode in mode_order:
+                if mode in grouped_time:
+                    mode_share_time[mode] = (grouped_time[mode] / total_time * 100)
+
+        # Number of trips
+        total_number_of_trips = df['trips'].sum()
+
+        # Number of km
+        total_distance = df[distance_col].sum()
+
+        # Mode share by distance (%)
+        mode_share_distance = OrderedDict.fromkeys(mode_order, 0)  # Initialize with fixed order
+
+        if total_distance > 0:
+                grouped_distance = df.groupby(mode_col)[distance_col].sum()
+                for mode in mode_order:
+                    if mode in grouped_distance:
+                        mode_share_distance[mode] = (grouped_distance[mode] / total_distance * 100)
+
+        summary = {
+            'mode_share_trips': mode_share_trips,
+            'total_number_of_trips': total_number_of_trips,
+            'mode_share_distance': mode_share_distance,
+            'mode_share_time': mode_share_time,
+            'unique_modes': df[mode_col].unique().tolist(),
+            'total_distance': total_distance,
+            'total_time': total_time
+        }
+
+        return summary
+    except Exception as e:
+        print("Error inside process_vista_data:", e)
+        return {}
+    
+
+def process_vista_data():
+    journey_types = ["TRIPS", "STOPS", "WORK", "EDUCATION"]
+
+    category_mapping = {
+        'Vehicle Driver': 'Private Vehicle',
+        'Train': 'Public Transport',
+        'Vehicle Passenger': 'Private Vehicle',
+        'Motorcycle': 'Private Vehicle',
+        'Public Bus': 'Public Transport',
+        'Walking': 'Walking',
+        'Bicycle': 'Bicycle',
+        'Tram': 'Public Transport',
+        'Taxi': 'Private Vehicle',
+        'Other': 'Other Modes',
+        'Jogging': 'Other Modes',
+        'School Bus': 'Private Vehicle',
+        'Mobility Scooter': 'Other Modes'
+    }
+
+    # Set a consistent order based on the modes from the category_mapping
+    mode_order = list(dict.fromkeys(category_mapping.values()))
+
+    with Pool() as pool:
+        summaries = pool.map(process_single_vista_data, journey_types)
+
+    combined_summary = {
+        'mode_share_trips': OrderedDict.fromkeys(mode_order, 0),
+        'total_number_of_trips': 0,
+        'mode_share_distance': OrderedDict.fromkeys(mode_order, 0),
+        'mode_share_time': OrderedDict.fromkeys(mode_order, 0),
+        'unique_modes': set(),
+        'total_distance': 0,
+        'total_time': 0
+    }
+
+    # Initialize mode_raw_trips, mode_raw_distance, and mode_raw_time
+    combined_summary['mode_raw_trips'] = OrderedDict.fromkeys(mode_order, 0)
+    combined_summary['mode_raw_distance'] = OrderedDict.fromkeys(mode_order, 0)
+    combined_summary['mode_raw_time'] = OrderedDict.fromkeys(mode_order, 0)
+
+    # Accumulate raw counts
+    for summary in summaries:
+        combined_summary['total_number_of_trips'] += summary['total_number_of_trips']
+        combined_summary['total_distance'] += summary['total_distance']
+        combined_summary['total_time'] += summary['total_time']
+
+        # Update unique modes
+        combined_summary['unique_modes'].update(summary['unique_modes'])
+        
+        for mode, count in summary['mode_share_trips'].items():
+            if count > 0:  # Check if there's something to add
+                combined_summary['mode_raw_trips'][mode] += count
+                
+        for mode, distance in summary['mode_share_distance'].items():
+            if distance > 0:  # Check if there's something to add
+                combined_summary['mode_raw_distance'][mode] += distance
+
+        for mode, time in summary['mode_share_time'].items():
+            if time > 0:  # Check if there's something to add
+                combined_summary['mode_raw_time'][mode] += time
+
+
+                
+    # Calculate percentages after all counts have been accumulated
+    if combined_summary['total_number_of_trips'] > 0:
+        combined_summary['mode_share_trips'] = {
+            mode: (count / combined_summary['total_number_of_trips'] * 100)
+            for mode, count in combined_summary['mode_raw_trips'].items()
+        }
+
+    if combined_summary['total_distance'] > 0:
+        combined_summary['mode_share_distance'] = {
+            mode: (dist / combined_summary['total_distance'] * 100)
+            for mode, dist in combined_summary['mode_raw_distance'].items()
+        }
+
+    if combined_summary['total_time'] > 0:
+        combined_summary['mode_share_time'] = {
+            mode: (time / combined_summary['total_time'] * 100)
+            for mode, time in combined_summary['mode_raw_time'].items()
+        }
+
+    unique_modes_list = list(combined_summary['unique_modes'])
+
+    # Sort unique_modes_list based on the predefined mode_order
+    sorted_unique_modes = sorted(unique_modes_list, key=lambda x: mode_order.index(x))
+
+    combined_summary['unique_modes'] = sorted_unique_modes
+
+    print(sorted_unique_modes)
+    print(combined_summary)
+    return combined_summary
+
+
+
+def fetch_vista_data(journey_type):
+    # Define URL and parameters
+    url = 'https://discover.data.vic.gov.au/api/3/action/datastore_search'
+    limit = 32000  # Maximum number of records per request
+    offset = 0     # Starting point for the results
+
+    resource_ids = {
+        "WORK": '5731a38c-6931-4135-bb95-78a9c601a9ab',
+        "EDUCATION": '6967fe21-969f-4a53-8997-60b3b9126067',
+        "STOPS": '79fd0247-ef20-4145-a431-3577cafe5c41',
+        "TRIPS": '32949433-4c83-4ce8-83f5-7f7b40bd04d0'
+    }
+    resource_id = resource_ids[journey_type]
+
+    all_records = []
+
+    while True:
+        params = {
+            'resource_id': resource_id,
+            'limit': limit,
+            'offset': offset
+        }
+
+        # Fetch data from the API
+        response = requests.get(url, params=params, verify=False)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            data = response.json()
+            records = data['result']['records']
+
+            if not records:  # Break the loop if no more records are found
+                break
+
+            all_records.extend(records)
+
+            # Increase the offset by the number of records fetched to fetch the next page in the next iteration
+            offset += len(records)
+        else:
+            # Handle the error
+            print("Error fetching VISTA data:", response.status_code)
+            break
+
+    return pd.DataFrame(all_records)
+
 
 def create_app():
     app = Flask(__name__)
@@ -735,226 +1004,6 @@ def create_app():
             os.remove(filepath)
 
         return redirect(url_for('ev_index'))
-
-    def process_single_vista_data(journey_type):
-        try:
-            df = fetch_vista_data(journey_type)
-            if df.empty:
-                print("No data fetched from API.")
-                return {}
-            
-            mode_col_mapping = {
-                "WORK": 'jtwmode',
-                "EDUCATION": 'jtemode',
-                "STOPS": 'mainmode',
-                "TRIPS": 'linkmode'
-            }
-
-            mode_col = mode_col_mapping.get(journey_type)
-
-            dist_col_mapping = {
-                "WORK": 'jtwdist',
-                "EDUCATION": 'jtedist',
-                "STOPS": 'vistadist',
-                "TRIPS": 'cumdist'
-            }
-
-            distance_col = dist_col_mapping.get(journey_type)
-
-            time_col_mapping = {
-                "WORK": 'jtwelapsedtime',
-                "EDUCATION": 'jteelapsedtime',
-                "STOPS": 'travtime',
-                "TRIPS": 'travtime'
-            }
-
-            time_col = time_col_mapping.get(journey_type)
-
-            df[time_col] = pd.to_numeric(df[time_col], errors='coerce')
-            df[distance_col] = pd.to_numeric(df[distance_col], errors='coerce')
-
-            df.dropna(subset=[time_col, distance_col, mode_col], inplace=True)
-            
-            # Convert elapsed time to hours if data is in minutes
-            df[time_col] = df[time_col] / 60.0
-            
-            # Assuming a default trip value of 1 for each row
-            df['trips'] = 1
-
-            # Mapping current categories to new categories
-            category_mapping = {
-                'Vehicle Driver': 'Private Vehicle',
-                'Train': 'Public Transport',
-                'Vehicle Passenger': 'Private Vehicle',
-                'Motorcycle': 'Private Vehicle',
-                'Public Bus': 'Public Transport',
-                'Walking': 'Walking',
-                'Bicycle': 'Bicycle',
-                'Tram': 'Public Transport',
-                'Taxi': 'Private Vehicle',
-                'Other': 'Other Modes',
-                'Jogging': 'Other Modes',
-                'School Bus': 'Private Vehicle',
-                'Mobility Scooter': 'Other Modes'
-            }
-
-            print("Before mode mapping:")
-            print(df[mode_col].value_counts(dropna=False))
-
-            df[mode_col] = df[mode_col].map(category_mapping)
-
-            print("After mode mapping:")
-            print(df[mode_col].value_counts(dropna=False))
-
-            # Mode share by number of trips (%)
-            total_trips = df['trips'].sum()
-            # Mode share by number of trips (%)
-            mode_order = list(category_mapping.values())
-            mode_order = list(dict.fromkeys(mode_order))  # Remove duplicates
-            # Mode share by number of trips (%)
-            mode_share_trips = OrderedDict.fromkeys(mode_order, 0)  # Initialize OrderedDict with fixed order and default values
-
-
-            grouped_trips = df.groupby(mode_col)['trips'].sum()
-            for mode in mode_order:
-                if mode in grouped_trips:
-                    mode_share_trips[mode] = (grouped_trips[mode] / total_trips * 100)
-
-            for mode in df[mode_col].unique():
-                mode_share_trips[mode] = (grouped_trips[mode] / total_trips * 100)
-
-            # Number of hours
-            total_time = df[time_col].sum()
-
-            # Mode share by time (%)
-            mode_share_time = OrderedDict.fromkeys(mode_order, 0)  # Initialize with fixed order
-
-            grouped_time = df.groupby(mode_col)[time_col].sum()
-            for mode in mode_order:
-                if mode in grouped_time:
-                    mode_share_time[mode] = (grouped_time[mode] / total_time * 100)
-
-            # Number of trips
-            total_number_of_trips = df['trips'].sum()
-
-            # Number of km
-            total_distance = df[distance_col].sum()
-
-            # Mode share by distance (%)
-            mode_share_distance = OrderedDict.fromkeys(mode_order, 0)  # Initialize with fixed order
-
-            grouped_distance = df.groupby(mode_col)[distance_col].sum()
-            for mode in mode_order:
-                if mode in grouped_distance:
-                    mode_share_distance[mode] = (grouped_distance[mode] / total_distance * 100)
-
-            summary = {
-                'mode_share_trips': mode_share_trips,
-                'total_number_of_trips': total_number_of_trips,
-                'mode_share_distance': mode_share_distance,
-                'mode_share_time': mode_share_time,
-                'unique_modes': df[mode_col].unique().tolist(),
-                'total_distance': total_distance,
-                'total_time': total_time
-            }
-
-            return summary
-        except Exception as e:
-            print("Error inside process_vista_data:", e)
-            return {}
-
-    def process_vista_data():
-        journey_types = ["TRIPS", "STOPS", "WORK", "EDUCATION"]
-
-        category_mapping = {
-            'Vehicle Driver': 'Private Vehicle',
-            'Train': 'Public Transport',
-            'Vehicle Passenger': 'Private Vehicle',
-            'Motorcycle': 'Private Vehicle',
-            'Public Bus': 'Public Transport',
-            'Walking': 'Walking',
-            'Bicycle': 'Bicycle',
-            'Tram': 'Public Transport',
-            'Taxi': 'Private Vehicle',
-            'Other': 'Other Modes',
-            'Jogging': 'Other Modes',
-            'School Bus': 'Private Vehicle',
-            'Mobility Scooter': 'Other Modes'
-        }
-
-        # Set a consistent order based on the modes from the category_mapping
-        mode_order = list(dict.fromkeys(category_mapping.values()))
-        
-        combined_summary = {
-            'mode_share_trips': OrderedDict.fromkeys(mode_order, 0),
-            'total_number_of_trips': 0,
-            'mode_share_distance': OrderedDict.fromkeys(mode_order, 0),
-            'mode_share_time': OrderedDict.fromkeys(mode_order, 0),
-            'unique_modes': set(),
-            'total_distance': 0,
-            'total_time': 0
-        }
-
-        for journey_type in journey_types:
-            summary = process_single_vista_data(journey_type)
-            for key, value in summary.items():
-                if key in ['mode_share_trips', 'mode_share_distance', 'mode_share_time']:
-                    for mode, val in value.items():
-                        combined_summary[key][mode] += val
-                elif key == 'unique_modes':
-                    combined_summary[key].update(value)
-                else:
-                    combined_summary[key] += value
-
-        combined_summary['unique_modes'] = list(combined_summary['unique_modes'])
-
-        print(combined_summary)
-        return combined_summary
-
-    def fetch_vista_data(journey_type):
-        # Define URL and parameters
-        url = 'https://discover.data.vic.gov.au/api/3/action/datastore_search'
-        limit = 32000  # Maximum number of records per request
-        offset = 0     # Starting point for the results
-
-        resource_ids = {
-            "WORK": '5731a38c-6931-4135-bb95-78a9c601a9ab',
-            "EDUCATION": '6967fe21-969f-4a53-8997-60b3b9126067',
-            "STOPS": '79fd0247-ef20-4145-a431-3577cafe5c41',
-            "TRIPS": '32949433-4c83-4ce8-83f5-7f7b40bd04d0'
-        }
-        resource_id = resource_ids[journey_type]
-
-        all_records = []
-
-        while True:
-            params = {
-                'resource_id': resource_id,
-                'limit': limit,
-                'offset': offset
-            }
-
-            # Fetch data from the API
-            response = requests.get(url, params=params, verify=False)
-
-            # Check if the request was successful
-            if response.status_code == 200:
-                data = response.json()
-                records = data['result']['records']
-
-                if not records:  # Break the loop if no more records are found
-                    break
-
-                all_records.extend(records)
-
-                # Increase the offset by the number of records fetched to fetch the next page in the next iteration
-                offset += len(records)
-            else:
-                # Handle the error
-                print("Error fetching VISTA data:", response.status_code)
-                break
-
-        return pd.DataFrame(all_records)
 
     @app.route('/vista_summary', methods=['GET'])
     def vista_summary():
