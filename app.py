@@ -12,6 +12,7 @@ from sqlalchemy import asc
 from collections import defaultdict
 import pandas as pd
 import os
+import json
 import shutil
 from collections import OrderedDict
 import requests
@@ -161,9 +162,16 @@ def process_vista_data():
     print(combined_summary)
     return combined_summary
 
-
 def fetch_vista_data(journey_type):
-    # Define URL and parameters
+    # Filename where the cached data will be stored
+    cache_filename = f'cache_{journey_type}.csv'
+
+    # Check if we already have the cached data
+    if os.path.exists(cache_filename):
+        # If the cache file exists, read it and return the DataFrame
+        return pd.read_csv(cache_filename, low_memory=False)
+
+    # If the cache file does not exist, fetch the data from the API
     url = 'https://discover.data.vic.gov.au/api/3/action/datastore_search'
     limit = 32000  # Maximum number of records per request
     offset = 0     # Starting point for the results
@@ -185,27 +193,23 @@ def fetch_vista_data(journey_type):
             'offset': offset
         }
 
-        # Fetch data from the API
         response = requests.get(url, params=params, verify=False)
-
-        # Check if the request was successful
         if response.status_code == 200:
             data = response.json()
             records = data['result']['records']
-
-            if not records:  # Break the loop if no more records are found
+            if not records:
                 break
-
             all_records.extend(records)
-
-            # Increase the offset by the number of records fetched to fetch the next page in the next iteration
             offset += len(records)
         else:
-            # Handle the error
             print("Error fetching VISTA data:", response.status_code)
             break
 
-    return pd.DataFrame(all_records)
+    df = pd.DataFrame(all_records)
+    # Save the fetched data to a CSV file for caching
+    df.to_csv(cache_filename, index=False)
+    return df
+
 
 
 def create_app():
