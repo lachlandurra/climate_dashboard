@@ -18,6 +18,7 @@ from collections import OrderedDict
 import requests
 import urllib3
 from multiprocessing import Pool
+import numpy as np
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -42,9 +43,9 @@ category_mapping = {
     'Mobility Scooter': 'Other Modes'
 }
 
-def process_single_vista_data(journey_type):
+def process_single_vista_data(journey_type, force_update=False):
     try:
-        df = fetch_vista_data(journey_type)
+        df = fetch_vista_data(journey_type, force_update)
         if df.empty:
             print("No data fetched from API.")
             return {}
@@ -114,7 +115,13 @@ def process_single_vista_data(journey_type):
         print("Error inside process_vista_data:", e)
         return {}
 
-def process_vista_data():
+def process_vista_data(force_update=False):
+    summary_filename = 'vista_summary.json'
+
+    # If summary data exists and we're not forcing an update, fetch the summary
+    if not force_update and os.path.exists(summary_filename):
+        return fetch_summary_data(summary_filename)
+    
     journey_types = ["TRIPS", "STOPS", "WORK", "EDUCATION"]
 
     # Set a consistent order based on the modes from the category_mapping
@@ -134,7 +141,7 @@ def process_vista_data():
     mode_raw_time = {mode: 0 for mode in mode_order}
 
     with Pool() as pool:
-        summaries = pool.map(process_single_vista_data, journey_types)
+        summaries = pool.starmap(process_single_vista_data, [(journey_type, force_update) for journey_type in journey_types])
 
     # Accumulate raw counts from summaries
     for summary in summaries:
@@ -160,58 +167,83 @@ def process_vista_data():
 
     print(combined_summary['unique_modes'])
     print(combined_summary)
+    store_summary_data(combined_summary, summary_filename)
     return combined_summary
 
-def fetch_vista_data(journey_type):
+def fetch_vista_data(journey_type, force_update=False):
     # Filename where the cached data will be stored
     cache_filename = f'cache_{journey_type}.csv'
 
-    # Check if we already have the cached data
-    if os.path.exists(cache_filename):
-        # If the cache file exists, read it and return the DataFrame
-        return pd.read_csv(cache_filename, low_memory=False)
+    if force_update or not os.path.exists(cache_filename):
 
-    # If the cache file does not exist, fetch the data from the API
-    url = 'https://discover.data.vic.gov.au/api/3/action/datastore_search'
-    limit = 32000  # Maximum number of records per request
-    offset = 0     # Starting point for the results
+        # If the cache file does not exist, fetch the data from the API
+        url = 'https://discover.data.vic.gov.au/api/3/action/datastore_search'
+        limit = 32000  # Maximum number of records per request
+        offset = 0     # Starting point for the results
 
-    resource_ids = {
-        "WORK": '5731a38c-6931-4135-bb95-78a9c601a9ab',
-        "EDUCATION": '6967fe21-969f-4a53-8997-60b3b9126067',
-        "STOPS": '79fd0247-ef20-4145-a431-3577cafe5c41',
-        "TRIPS": '32949433-4c83-4ce8-83f5-7f7b40bd04d0'
-    }
-    resource_id = resource_ids[journey_type]
-
-    all_records = []
-
-    while True:
-        params = {
-            'resource_id': resource_id,
-            'limit': limit,
-            'offset': offset
+        resource_ids = {
+            "WORK": '5731a38c-6931-4135-bb95-78a9c601a9ab',
+            "EDUCATION": '6967fe21-969f-4a53-8997-60b3b9126067',
+            "STOPS": '79fd0247-ef20-4145-a431-3577cafe5c41',
+            "TRIPS": '32949433-4c83-4ce8-83f5-7f7b40bd04d0'
         }
+        resource_id = resource_ids[journey_type]
 
-        response = requests.get(url, params=params, verify=False)
-        if response.status_code == 200:
-            data = response.json()
-            records = data['result']['records']
-            if not records:
+        all_records = []
+
+        while True:
+            params = {
+                'resource_id': resource_id,
+                'limit': limit,
+                'offset': offset
+            }
+
+            response = requests.get(url, params=params, verify=False)
+            if response.status_code == 200:
+                data = response.json()
+                records = data['result']['records']
+                if not records:
+                    break
+                all_records.extend(records)
+                offset += len(records)
+            else:
+                print("Error fetching VISTA data:", response.status_code)
                 break
-            all_records.extend(records)
-            offset += len(records)
-        else:
-            print("Error fetching VISTA data:", response.status_code)
-            break
 
-    df = pd.DataFrame(all_records)
-    # Save the fetched data to a CSV file for caching
-    df.to_csv(cache_filename, index=False)
-    return df
+        df = pd.DataFrame(all_records)
+        # Save the fetched data to a CSV file for caching
+        df.to_csv(cache_filename, index=False)
+        return df
+        # Check if we already have the cached data
 
+    return pd.read_csv(cache_filename, low_memory=False)
 
+def store_summary_data(summary_data, filename='vista_summary.json'):
+    # Convert numpy int64 to python int, for json serialization
+    def convert(o):
+        if isinstance(o, np.int64): 
+            return int(o)  
+        raise TypeError
+    
+    # Write JSON data to a temporary file first
+    temp_filename = filename + '.tmp'
+    with open(temp_filename, 'w') as tmp_file:
+        json.dump(summary_data, tmp_file, default=convert)
+    
+    # Rename temporary file to the desired file name, replacing the old file
+    os.replace(temp_filename, filename)
 
+def fetch_summary_data(filename='vista_summary.json'):
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"An error occurred while reading the JSON file: {e}")
+        # The file is corrupt and not empty, delete the corrupt file
+        os.remove(filename)
+        # The function should return None or re-fetch/re-process the data as needed
+        return None
+    
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///climatedashboard.db'
@@ -232,6 +264,20 @@ def create_app():
             with open(file_path, 'r') as f:
                 return f.read()
         return "No file chosen"
+    
+    @app.route('/refresh-data', methods=['POST'])
+    def refresh_data():
+        try:
+            # Here you should call your function to refresh the data
+            process_vista_data(force_update=True)
+            # Redirect to the same page or to a confirmation page
+            flash('Data refresh initiated', 'success')
+            return redirect(url_for('vista_summary'))
+        except Exception as e:
+            # If there's an error, you might want to flash a message or handle it otherwise
+            flash(f"An error occurred: {e}", 'error')
+            return redirect(url_for('vista_summary'))
+
 
     @app.route('/')
     def index():
@@ -1111,6 +1157,7 @@ def create_app():
         else:
             flash('No data uploaded yet. Please upload the Google Insights Explorer data CSV file.')
             return redirect(url_for('ev_index'))
+    
         
     @app.route('/upload_evie', methods=['POST'])
     def upload_evie():
